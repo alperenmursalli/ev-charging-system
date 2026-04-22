@@ -1,5 +1,5 @@
 package com.example.evsystem.entity;
-
+import com.example.evsystem.enums.ConnectorType;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,7 +13,8 @@ public class Vehicle {
     private String brand;
     private String model;
     private Double batteryCapacity;
-    private String connectorType;
+    @Enumerated(EnumType.STRING)
+    private ConnectorType connectorType;
     private String plateNumber;
 
     public Long getId() { return id; }
@@ -27,8 +28,8 @@ public class Vehicle {
     public Double getBatteryCapacity() { return batteryCapacity; }
     public void setBatteryCapacity(Double batteryCapacity) { this.batteryCapacity = batteryCapacity; }
 
-    public String getConnectorType() { return connectorType; }
-    public void setConnectorType(String connectorType) { this.connectorType = connectorType; }
+    public ConnectorType getConnectorType() { return connectorType; }
+    public void setConnectorType(ConnectorType connectorType) { this.connectorType = connectorType; }
 
     public String getPlateNumber() { return plateNumber; }
     public void setPlateNumber(String plateNumber) { this.plateNumber = plateNumber; }
