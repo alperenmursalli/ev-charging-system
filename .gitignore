@@ -32,3 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 application.properties
+src/main/resources/application-local.properties
+
+http-client.env.json

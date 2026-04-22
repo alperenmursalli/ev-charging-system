@@ -1,4 +1,7 @@
-POST http://localhost:8080/vehicles
+@baseUrl = http://{{host}}:{{port}}
+
+###
+POST {{baseUrl}}/vehicles
 Content-Type: application/json
 
 {
@@ -6,5 +9,14 @@ Content-Type: application/json
   "model": "Model 3",
   "batteryCapacity": 75,
   "connectorType": "CCS",
-  "plateNumber": "35EV2024"
+  "plateNumber": "61TH310"
 }
+
+###
+GET {{baseUrl}}/vehicles
+
+###
+GET {{baseUrl}}/vehicles/1
+
+###
+DELETE {{baseUrl}}/vehicles/1
