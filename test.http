@@ -28,7 +28,6 @@ Content-Type: application/json
 POST {{baseUrl}}/vehicles
 Content-Type: application/json
 
-
 {
   "brand": "Tesla",
   "model": "Model 3",
@@ -36,8 +35,6 @@ Content-Type: application/json
   "connectorType": "CCS",
   "plateNumber": "61TH310"
 }
-
-
 
 ###
 GET {{baseUrl}}/vehicles
@@ -47,3 +44,93 @@ GET {{baseUrl}}/vehicles/1
 
 ###
 DELETE {{baseUrl}}/vehicles/1
+
+###
+POST {{baseUrl}}/stations
+Content-Type: application/json
+
+{
+  "name": "Karşıyaka Hub",
+  "address": "Karşıyaka, İzmir",
+  "latitude": 38.4589,
+  "longitude": 27.1143,
+  "status": "AVAILABLE"
+}
+
+###
+POST {{baseUrl}}/stations
+Content-Type: application/json
+
+{
+  "name": "Bornova Station",
+  "address": "Bornova, İzmir",
+  "latitude": 38.4681,
+  "longitude": 27.2153,
+  "status": "AVAILABLE"
+}
+
+###
+POST {{baseUrl}}/stations
+Content-Type: application/json
+
+{
+  "name": "Buca Point",
+  "address": "Buca, İzmir",
+  "latitude": 38.3833,
+  "longitude": 27.1833,
+  "status": "OFFLINE"
+}
+
+###
+GET {{baseUrl}}/stations
+
+###
+GET {{baseUrl}}/stations/1
+
+###
+GET {{baseUrl}}/stations/1/chargers
+
+###
+POST {{baseUrl}}/chargers
+Content-Type: application/json
+
+{
+  "chargerCode": "DC-50-01",
+  "chargerType": "DC",
+  "powerOutput": "KW_50",
+  "connectorType": "CCS",
+  "pricePerKwh": 4.0,
+  "status": "AVAILABLE",
+  "station": { "id": 1 }
+}
+
+###
+GET {{baseUrl}}/chargers
+
+###
+POST {{baseUrl}}/chargers
+Content-Type: application/json
+
+{
+  "chargerCode": "AC-22-01",
+  "chargerType": "AC",
+  "powerOutput": "KW_22",
+  "connectorType": "TYPE2",
+  "pricePerKwh": 3.0,
+  "status": "AVAILABLE",
+  "station": { "id": 2 }
+}
+
+###
+POST {{baseUrl}}/chargers
+Content-Type: application/json
+
+{
+  "chargerCode": "DC-150-01",
+  "chargerType": "DC",
+  "powerOutput": "KW_150",
+  "connectorType": "CHADEMO",
+  "pricePerKwh": 5.0,
+  "status": "OFFLINE",
+  "station": { "id": 3 }
+}
