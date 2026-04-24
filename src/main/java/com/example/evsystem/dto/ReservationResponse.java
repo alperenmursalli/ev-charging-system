@@ -3,8 +3,6 @@ package com.example.evsystem.dto;
 import com.example.evsystem.entity.Reservation;
 import com.example.evsystem.enums.ReservationStatus;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
 public class ReservationResponse {
@@ -20,25 +18,11 @@ public class ReservationResponse {
         ReservationResponse response = new ReservationResponse();
         response.id = reservation.getId();
         response.vehicleId = reservation.getVehicle().getId();
-        response.chargerId = readEntityId(reservation.getCharger());
+        response.chargerId = reservation.getCharger().getId();
         response.startTime = reservation.getStartTime();
         response.endTime = reservation.getEndTime();
         response.status = reservation.getStatus();
         return response;
-    }
-
-    private static Long readEntityId(Object entity) {
-        try {
-            Method method = entity.getClass().getMethod("getId");
-            Object value = method.invoke(entity);
-            if (value instanceof Long id) {
-                return id;
-            }
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
-            // Reservation can still be created even if the related module is merged later.
-        }
-
-        return null;
     }
 
     public Long getId() {
