@@ -1,7 +1,9 @@
 package com.example.evsystem.service;
 
 import com.example.evsystem.entity.Station;
+import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.StationRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +18,14 @@ public class StationService {
     }
 
     public Station save(Station station) {
+        if (station.getName() == null || station.getName().isBlank()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Station name cannot be empty");
+        }
+        boolean exists = stationRepository.findAll().stream()
+                .anyMatch(s -> s.getName().equalsIgnoreCase(station.getName()));
+        if (exists) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Station with this name already exists");
+        }
         return stationRepository.save(station);
     }
 
@@ -25,6 +35,21 @@ public class StationService {
 
     public Station getById(Long id) {
         return stationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Station not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Station not found with id: " + id));
+    }
+
+    public Station update(Long id, Station updated) {
+        Station station = getById(id);
+        if (updated.getName() != null) station.setName(updated.getName());
+        if (updated.getAddress() != null) station.setAddress(updated.getAddress());
+        if (updated.getLatitude() != null) station.setLatitude(updated.getLatitude());
+        if (updated.getLongitude() != null) station.setLongitude(updated.getLongitude());
+        if (updated.getStatus() != null) station.setStatus(updated.getStatus());
+        return stationRepository.save(station);
+    }
+
+    public void delete(Long id) {
+        getById(id);
+        stationRepository.deleteById(id);
     }
 }

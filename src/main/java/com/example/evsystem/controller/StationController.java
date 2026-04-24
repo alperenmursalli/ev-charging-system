@@ -4,6 +4,9 @@ import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.Station;
 import com.example.evsystem.service.ChargerService;
 import com.example.evsystem.service.StationService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,22 +24,33 @@ public class StationController {
     }
 
     @PostMapping
-    public Station createStation(@RequestBody Station station) {
-        return stationService.save(station);
+    public ResponseEntity<Station> createStation(@Valid @RequestBody Station station) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(stationService.save(station));
     }
 
     @GetMapping
-    public List<Station> getAllStations() {
-        return stationService.getAll();
+    public ResponseEntity<List<Station>> getAllStations() {
+        return ResponseEntity.ok(stationService.getAll());
     }
 
     @GetMapping("/{id}")
-    public Station getStationById(@PathVariable Long id) {
-        return stationService.getById(id);
+    public ResponseEntity<Station> getStationById(@PathVariable Long id) {
+        return ResponseEntity.ok(stationService.getById(id));
     }
 
     @GetMapping("/{id}/chargers")
-    public List<Charger> getChargersByStation(@PathVariable Long id) {
-        return chargerService.getByStationId(id);
+    public ResponseEntity<List<Charger>> getChargersByStation(@PathVariable Long id) {
+        return ResponseEntity.ok(chargerService.getByStationId(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Station> updateStation(@PathVariable Long id, @Valid @RequestBody Station station) {
+        return ResponseEntity.ok(stationService.update(id, station));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteStation(@PathVariable Long id) {
+        stationService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

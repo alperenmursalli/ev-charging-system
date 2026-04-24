@@ -3,6 +3,8 @@ package com.example.evsystem.entity;
 import com.example.evsystem.enums.ChargerStatus;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Entity
@@ -13,11 +15,19 @@ public class Station {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Station name cannot be blank")
     private String name;
+
+    @NotBlank(message = "Address cannot be blank")
     private String address;
+
+    @NotNull(message = "Latitude cannot be null")
     private Double latitude;
+
+    @NotNull(message = "Longitude cannot be null")
     private Double longitude;
 
+    @NotNull(message = "Status cannot be null")
     @Enumerated(EnumType.STRING)
     private ChargerStatus status;
 

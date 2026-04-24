@@ -1,7 +1,9 @@
 package com.example.evsystem.service;
 
 import com.example.evsystem.entity.Charger;
+import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +18,14 @@ public class ChargerService {
     }
 
     public Charger save(Charger charger) {
+        if (charger.getPricePerKwh() != null && charger.getPricePerKwh() < 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Price per kWh cannot be negative");
+        }
+        boolean exists = chargerRepository.findAll().stream()
+                .anyMatch(c -> c.getChargerCode() != null && c.getChargerCode().equalsIgnoreCase(charger.getChargerCode()));
+        if (exists) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Charger with this code already exists");
+        }
         return chargerRepository.save(charger);
     }
 
@@ -25,12 +35,30 @@ public class ChargerService {
 
     public Charger getById(Long id) {
         return chargerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Charger not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Charger not found with id: " + id));
     }
 
     public List<Charger> getByStationId(Long stationId) {
         return chargerRepository.findAll().stream()
                 .filter(c -> c.getStation() != null && c.getStation().getId().equals(stationId))
                 .toList();
+    }
+
+    public Charger update(Long id, Charger updated) {
+        Charger charger = getById(id);
+        if (updated.getPricePerKwh() != null && updated.getPricePerKwh() < 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Price per kWh cannot be negative");
+        }
+        if (updated.getChargerType() != null) charger.setChargerType(updated.getChargerType());
+        if (updated.getPowerOutput() != null) charger.setPowerOutput(updated.getPowerOutput());
+        if (updated.getConnectorType() != null) charger.setConnectorType(updated.getConnectorType());
+        if (updated.getPricePerKwh() != null) charger.setPricePerKwh(updated.getPricePerKwh());
+        if (updated.getStatus() != null) charger.setStatus(updated.getStatus());
+        return chargerRepository.save(charger);
+    }
+
+    public void delete(Long id) {
+        getById(id);
+        chargerRepository.deleteById(id);
     }
 }

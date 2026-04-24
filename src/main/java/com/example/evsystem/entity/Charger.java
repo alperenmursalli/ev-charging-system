@@ -6,6 +6,8 @@ import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.PowerOutput;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "chargers")
@@ -17,17 +19,23 @@ public class Charger {
 
     private String chargerCode;
 
+    @NotNull(message = "Charger type cannot be null")
     @Enumerated(EnumType.STRING)
     private ChargerType chargerType;
 
+    @NotNull(message = "Power output cannot be null")
     @Enumerated(EnumType.STRING)
     private PowerOutput powerOutput;
 
+    @NotNull(message = "Connector type cannot be null")
     @Enumerated(EnumType.STRING)
     private ConnectorType connectorType;
 
+    @NotNull(message = "Price per kWh cannot be null")
+    @Positive(message = "Price per kWh must be positive")
     private Double pricePerKwh;
 
+    @NotNull(message = "Status cannot be null")
     @Enumerated(EnumType.STRING)
     private ChargerStatus status;
 
