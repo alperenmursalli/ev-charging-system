@@ -1,6 +1,6 @@
 package com.example.evsystem.entity;
 
-import com.example.evsystem.enums.ChargerStatus;
+import com.example.evsystem.enums.StationStatus;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -29,7 +29,7 @@ public class Station {
 
     @NotNull(message = "Status cannot be null")
     @Enumerated(EnumType.STRING)
-    private ChargerStatus status;
+    private StationStatus status;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "station", cascade = CascadeType.ALL)
@@ -49,8 +49,8 @@ public class Station {
     public Double getLongitude() { return longitude; }
     public void setLongitude(Double longitude) { this.longitude = longitude; }
 
-    public ChargerStatus getStatus() { return status; }
-    public void setStatus(ChargerStatus status) { this.status = status; }
+    public StationStatus getStatus() { return status; }
+    public void setStatus(StationStatus status) { this.status = status; }
 
     public List<Charger> getChargers() { return chargers; }
     public void setChargers(List<Charger> chargers) { this.chargers = chargers; }

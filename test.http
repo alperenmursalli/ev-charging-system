@@ -146,3 +146,28 @@ Content-Type: application/json
   "longitude": 27.1,
   "status": "AVAILABLE"
 }
+
+###
+POST {{baseUrl}}/stations
+Content-Type: application/json
+
+{
+  "name": "",
+  "address": "Test",
+  "latitude": 38.4,
+  "longitude": 27.1,
+  "status": "AVAILABLE"
+}
+
+###
+POST {{baseUrl}}/stations
+Content-Type: application/json
+
+{
+  "name": "Karşıyaka Hub",
+  "address": "Test",
+  "latitude": 38.4,
+  "longitude": 27.1,
+  "status": "AVAILABLE"
+}
+

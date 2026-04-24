@@ -21,9 +21,7 @@ public class ChargerService {
         if (charger.getPricePerKwh() != null && charger.getPricePerKwh() < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Price per kWh cannot be negative");
         }
-        boolean exists = chargerRepository.findAll().stream()
-                .anyMatch(c -> c.getChargerCode() != null && c.getChargerCode().equalsIgnoreCase(charger.getChargerCode()));
-        if (exists) {
+        if (charger.getChargerCode() != null && chargerRepository.existsByChargerCodeIgnoreCase(charger.getChargerCode())) {
             throw new BusinessException(HttpStatus.CONFLICT, "Charger with this code already exists");
         }
         return chargerRepository.save(charger);

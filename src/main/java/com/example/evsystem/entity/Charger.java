@@ -33,7 +33,7 @@ public class Charger {
 
     @NotNull(message = "Price per kWh cannot be null")
     @Positive(message = "Price per kWh must be positive")
-    private Double pricePerKwh;
+    private Float pricePerKwh;
 
     @NotNull(message = "Status cannot be null")
     @Enumerated(EnumType.STRING)
@@ -58,8 +58,8 @@ public class Charger {
     public ConnectorType getConnectorType() { return connectorType; }
     public void setConnectorType(ConnectorType connectorType) { this.connectorType = connectorType; }
 
-    public Double getPricePerKwh() { return pricePerKwh; }
-    public void setPricePerKwh(Double pricePerKwh) { this.pricePerKwh = pricePerKwh; }
+    public Float getPricePerKwh() { return pricePerKwh; }
+    public void setPricePerKwh(Float pricePerKwh) { this.pricePerKwh = pricePerKwh; }
 
     public ChargerStatus getStatus() { return status; }
     public void setStatus(ChargerStatus status) { this.status = status; }

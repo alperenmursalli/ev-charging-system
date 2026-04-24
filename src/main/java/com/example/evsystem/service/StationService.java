@@ -21,9 +21,7 @@ public class StationService {
         if (station.getName() == null || station.getName().isBlank()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Station name cannot be empty");
         }
-        boolean exists = stationRepository.findAll().stream()
-                .anyMatch(s -> s.getName().equalsIgnoreCase(station.getName()));
-        if (exists) {
+        if (stationRepository.existsByNameIgnoreCase(station.getName())) {
             throw new BusinessException(HttpStatus.CONFLICT, "Station with this name already exists");
         }
         return stationRepository.save(station);
