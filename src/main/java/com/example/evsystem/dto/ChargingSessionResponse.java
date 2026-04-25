@@ -12,6 +12,7 @@ public class ChargingSessionResponse {
     private Long chargerId;
     private Float startBatteryLevel;
     private Float endBatteryLevel;
+    private Float chargedPercentage;
     private Float consumedKwh;
     private Float totalCost;
     private LocalDateTime startedAt;
@@ -25,6 +26,7 @@ public class ChargingSessionResponse {
         response.chargerId = session.getReservation().getCharger().getId();
         response.startBatteryLevel = session.getStartBatteryLevel();
         response.endBatteryLevel = session.getEndBatteryLevel();
+        response.chargedPercentage = session.getEndBatteryLevel() - session.getStartBatteryLevel();
         response.consumedKwh = session.getConsumedKwh();
         response.totalCost = session.getTotalCost();
         response.startedAt = session.getStartedAt();
@@ -51,6 +53,10 @@ public class ChargingSessionResponse {
 
     public Float getEndBatteryLevel() {
         return endBatteryLevel;
+    }
+
+    public Float getChargedPercentage() {
+        return chargedPercentage;
     }
 
     public Float getConsumedKwh() {

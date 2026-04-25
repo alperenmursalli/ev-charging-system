@@ -29,9 +29,8 @@ public class ChargingSessionController {
 
     @PostMapping("/{id}/end")
     public ChargingSessionResponse endSession(@PathVariable Long id,
-                                              @RequestParam Float endBatteryLevel,
-                                              @RequestParam Float consumedKwh) {
-        return ChargingSessionResponse.from(chargingSessionService.endSession(id, endBatteryLevel, consumedKwh));
+                                              @RequestParam Float endBatteryLevel) {
+        return ChargingSessionResponse.from(chargingSessionService.endSession(id, endBatteryLevel));
     }
 
     @GetMapping
