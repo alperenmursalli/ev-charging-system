@@ -23,6 +23,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Transactional
@@ -34,8 +35,6 @@ public class ChargingSessionService {
     private final ReservationRepository reservationRepository;
     private final ChargerRepository chargerRepository;
     private final ReservationService reservationService;
-    private final Float autoStartBatteryLevel;
-
     public ChargingSessionService(ChargingSessionRepository chargingSessionRepository,
                                   ReservationRepository reservationRepository,
                                   ChargerRepository chargerRepository,
@@ -45,13 +44,13 @@ public class ChargingSessionService {
         this.reservationRepository = reservationRepository;
         this.chargerRepository = chargerRepository;
         this.reservationService = reservationService;
-        this.autoStartBatteryLevel = autoStartBatteryLevel;
     }
 
     public ChargingSession startSession(Long reservationId, Float startBatteryLevel) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation could not be found: " + reservationId));
-        validateBatteryLevel(startBatteryLevel, "Start battery level");
+        Float resolvedStartBatteryLevel = resolveStartBatteryLevel(reservation, startBatteryLevel);
+        validateBatteryLevel(resolvedStartBatteryLevel, "Start battery level");
         validateReservationWindow(reservation);
 
         if (reservation.getStatus() != ReservationStatus.ACTIVE && reservation.getStatus() != ReservationStatus.IN_PROGRESS) {
@@ -75,7 +74,7 @@ public class ChargingSessionService {
 
         ChargingSession session = new ChargingSession();
         session.setReservation(reservation);
-        session.setStartBatteryLevel(startBatteryLevel);
+        session.setStartBatteryLevel(resolvedStartBatteryLevel);
         session.setStartedAt(LocalDateTime.now());
         session.setStatus(ChargingSessionStatus.ACTIVE);
         charger.setStatus(ChargerStatus.OCCUPIED);
@@ -110,7 +109,7 @@ public class ChargingSessionService {
             }
 
             try {
-                startSession(reservation.getId(), autoStartBatteryLevel);
+                startSession(reservation.getId(), null);
                 log.info("Auto-started charging session for reservation {}", reservation.getId());
             } catch (BusinessException ignored) {
                 log.warn("Auto-start skipped for reservation {}: {}", reservation.getId(), ignored.getMessage());
@@ -163,6 +162,23 @@ public class ChargingSessionService {
         if (batteryLevel == null || batteryLevel < 0 || batteryLevel > 100) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, fieldName + " must be between 0 and 100.");
         }
+    }
+
+    private Float resolveStartBatteryLevel(Reservation reservation, Float requestedStartBatteryLevel) {
+        if (requestedStartBatteryLevel != null) {
+            return requestedStartBatteryLevel;
+        }
+
+        Long vehicleId = reservation.getVehicle().getId();
+        return chargingSessionRepository.findTopByReservation_Vehicle_IdOrderByStartedAtDescIdDesc(vehicleId)
+                .map(previousSession -> previousSession.getEndBatteryLevel() != null
+                        ? previousSession.getEndBatteryLevel()
+                        : previousSession.getStartBatteryLevel())
+                .orElseGet(this::generateInitialBatteryLevel);
+    }
+
+    private Float generateInitialBatteryLevel() {
+        return (float) ThreadLocalRandom.current().nextInt(0, 31);
     }
 
     private Float calculateConsumedKwh(ChargingSession session, Float endBatteryLevel) {

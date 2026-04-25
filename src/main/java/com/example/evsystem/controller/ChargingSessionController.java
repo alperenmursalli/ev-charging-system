@@ -23,7 +23,7 @@ public class ChargingSessionController {
 
     @PostMapping("/start")
     public ChargingSessionResponse startSession(@RequestParam Long reservationId,
-                                                @RequestParam Float startBatteryLevel) {
+                                                @RequestParam(required = false) Float startBatteryLevel) {
         return ChargingSessionResponse.from(chargingSessionService.startSession(reservationId, startBatteryLevel));
     }
 

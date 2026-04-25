@@ -17,6 +17,7 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     boolean existsByReservation_Charger_IdAndStatus(Long chargerId, ChargingSessionStatus status);
     List<ChargingSession> findByReservation_Vehicle_Id(Long vehicleId);
     List<ChargingSession> findByReservation_Charger_Id(Long chargerId);
+    Optional<ChargingSession> findTopByReservation_Vehicle_IdOrderByStartedAtDescIdDesc(Long vehicleId);
     @EntityGraph(attributePaths = {"reservation", "reservation.charger", "reservation.vehicle"})
     List<ChargingSession> findByStatusAndReservation_EndTimeLessThanEqual(ChargingSessionStatus status, LocalDateTime endTime);
 

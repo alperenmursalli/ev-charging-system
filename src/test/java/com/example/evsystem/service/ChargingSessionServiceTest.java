@@ -131,6 +131,7 @@ class ChargingSessionServiceTest {
         when(reservation.getId()).thenReturn(15L);
         when(reservation.getStatus()).thenReturn(ReservationStatus.ACTIVE);
         when(reservation.getCharger()).thenReturn(charger);
+        when(reservation.getVehicle()).thenReturn(vehicleWithId(7L));
         when(reservation.getStartTime()).thenReturn(LocalDateTime.now().minusMinutes(1));
         when(reservation.getEndTime()).thenReturn(LocalDateTime.now().plusMinutes(5));
 
@@ -138,6 +139,7 @@ class ChargingSessionServiceTest {
                 any(ReservationStatus.class), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(java.util.List.of(reservation));
         when(chargingSessionRepository.findByReservationIdAndStatus(15L, ChargingSessionStatus.ACTIVE)).thenReturn(Optional.empty());
+        when(chargingSessionRepository.findTopByReservation_Vehicle_IdOrderByStartedAtDescIdDesc(7L)).thenReturn(Optional.empty());
         when(reservationRepository.findById(15L)).thenReturn(Optional.of(reservation));
         when(chargerRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(charger));
         when(chargingSessionRepository.existsByReservation_Charger_IdAndStatus(50L, ChargingSessionStatus.ACTIVE)).thenReturn(false);
@@ -150,9 +152,46 @@ class ChargingSessionServiceTest {
         verify(reservationService).markInProgress(15L);
     }
 
+    @Test
+    void startSessionUsesLastKnownBatteryLevelForReturningVehicle() {
+        Charger charger = mock(Charger.class);
+        when(charger.getId()).thenReturn(60L);
+        when(charger.getStatus()).thenReturn(ChargerStatus.AVAILABLE);
+
+        Reservation reservation = mock(Reservation.class);
+        when(reservation.getId()).thenReturn(16L);
+        when(reservation.getStatus()).thenReturn(ReservationStatus.ACTIVE);
+        when(reservation.getCharger()).thenReturn(charger);
+        when(reservation.getVehicle()).thenReturn(vehicleWithId(8L));
+        when(reservation.getStartTime()).thenReturn(LocalDateTime.now().minusMinutes(1));
+        when(reservation.getEndTime()).thenReturn(LocalDateTime.now().plusMinutes(5));
+
+        ChargingSession previousSession = new ChargingSession();
+        previousSession.setStartBatteryLevel(18f);
+        previousSession.setEndBatteryLevel(42f);
+
+        when(reservationRepository.findById(16L)).thenReturn(Optional.of(reservation));
+        when(chargingSessionRepository.findTopByReservation_Vehicle_IdOrderByStartedAtDescIdDesc(8L)).thenReturn(Optional.of(previousSession));
+        when(chargerRepository.findByIdForUpdate(60L)).thenReturn(Optional.of(charger));
+        when(chargingSessionRepository.findByReservationIdAndStatus(16L, ChargingSessionStatus.ACTIVE)).thenReturn(Optional.empty());
+        when(chargingSessionRepository.existsByReservation_Charger_IdAndStatus(60L, ChargingSessionStatus.ACTIVE)).thenReturn(false);
+        when(chargingSessionRepository.save(any(ChargingSession.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChargingSession session = chargingSessionService.startSession(16L, null);
+
+        assertEquals(42f, session.getStartBatteryLevel());
+        verify(reservationService).markInProgress(16L);
+    }
+
     private com.example.evsystem.entity.Vehicle vehicleWithBatteryCapacity(Double batteryCapacity) {
         com.example.evsystem.entity.Vehicle vehicle = new com.example.evsystem.entity.Vehicle();
         vehicle.setBatteryCapacity(batteryCapacity);
+        return vehicle;
+    }
+
+    private com.example.evsystem.entity.Vehicle vehicleWithId(Long id) {
+        com.example.evsystem.entity.Vehicle vehicle = mock(com.example.evsystem.entity.Vehicle.class);
+        when(vehicle.getId()).thenReturn(id);
         return vehicle;
     }
 }
