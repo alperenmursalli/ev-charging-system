@@ -1,9 +1,13 @@
 package com.example.evsystem.controller;
 
 import com.example.evsystem.dto.ChargerResponse;
+import com.example.evsystem.dto.StationDiscoveryResponse;
 import com.example.evsystem.dto.StationResponse;
 import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.Station;
+import com.example.evsystem.enums.ConnectorType;
+import com.example.evsystem.enums.PowerOutput;
+import com.example.evsystem.enums.StationStatus;
 import com.example.evsystem.service.ChargerService;
 import com.example.evsystem.service.StationService;
 import jakarta.validation.Valid;
@@ -35,6 +39,25 @@ public class StationController {
         return ResponseEntity.ok(stationService.getAll().stream()
                 .map(StationResponse::from)
                 .toList());
+    }
+
+    @GetMapping("/discovery")
+    public ResponseEntity<List<StationDiscoveryResponse>> discoverStations(
+            @RequestParam(required = false) ConnectorType connectorType,
+            @RequestParam(required = false) PowerOutput powerOutput,
+            @RequestParam(required = false) Float maxPricePerKwh,
+            @RequestParam(required = false) StationStatus status,
+            @RequestParam(required = false) Double userLatitude,
+            @RequestParam(required = false) Double userLongitude
+    ) {
+        return ResponseEntity.ok(stationService.discover(
+                connectorType,
+                powerOutput,
+                maxPricePerKwh,
+                status,
+                userLatitude,
+                userLongitude
+        ));
     }
 
     @GetMapping("/{id}")

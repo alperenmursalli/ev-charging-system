@@ -257,3 +257,12 @@ DELETE {{baseUrl}}/reservations/{{autoReservationId}}
 
 ###
 DELETE {{baseUrl}}/reservations/6
+
+###
+GET {{baseUrl}}/stations/discovery
+
+###
+GET {{baseUrl}}/stations/discovery?userLatitude=38.4237&userLongitude=27.1428
+
+###
+GET {{baseUrl}}/stations/discovery?connectorType=CCS

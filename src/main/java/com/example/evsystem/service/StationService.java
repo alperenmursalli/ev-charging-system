@@ -1,12 +1,17 @@
 package com.example.evsystem.service;
 
+import com.example.evsystem.dto.StationDiscoveryResponse;
 import com.example.evsystem.entity.Station;
+import com.example.evsystem.enums.ConnectorType;
+import com.example.evsystem.enums.PowerOutput;
+import com.example.evsystem.enums.StationStatus;
 import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.StationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -31,6 +36,27 @@ public class StationService {
 
     public List<Station> getAll() {
         return stationRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StationDiscoveryResponse> discover(
+            ConnectorType connectorType,
+            PowerOutput powerOutput,
+            Float maxPricePerKwh,
+            StationStatus status,
+            Double userLatitude,
+            Double userLongitude
+    ) {
+        return stationRepository.findAll().stream()
+                .map(station -> StationDiscoveryResponse.from(station, userLatitude, userLongitude))
+                .filter(station -> connectorType == null || station.getConnectorTypes().contains(connectorType))
+                .filter(station -> powerOutput == null || station.getPowerOutputs().contains(powerOutput))
+                .filter(station -> maxPricePerKwh == null || (station.getMinPricePerKwh() != null && station.getMinPricePerKwh() <= maxPricePerKwh))
+                .filter(station -> status == null || station.getStatus() == status)
+                .sorted(userLatitude != null && userLongitude != null
+                        ? Comparator.comparing(StationDiscoveryResponse::getDistanceKm, Comparator.nullsLast(Double::compareTo))
+                        : Comparator.comparing(StationDiscoveryResponse::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
     public Station getById(Long id) {
