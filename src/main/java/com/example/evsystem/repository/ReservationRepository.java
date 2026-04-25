@@ -24,4 +24,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             LocalDateTime startTime,
             LocalDateTime endTime
     );
+
+    @EntityGraph(attributePaths = {"vehicle", "charger"})
+    List<Reservation> findByStatusInAndEndTimeLessThanEqual(
+            Collection<ReservationStatus> statuses,
+            LocalDateTime endTime
+    );
+
+    @EntityGraph(attributePaths = {"vehicle", "charger"})
+    List<Reservation> findByStatusInAndEndTimeBefore(
+            Collection<ReservationStatus> statuses,
+            LocalDateTime endTime
+    );
 }

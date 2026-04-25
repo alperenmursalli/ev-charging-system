@@ -33,15 +33,18 @@ public class ChargingSessionService {
     private final ChargingSessionRepository chargingSessionRepository;
     private final ReservationRepository reservationRepository;
     private final ChargerRepository chargerRepository;
+    private final ReservationService reservationService;
     private final Float autoStartBatteryLevel;
 
     public ChargingSessionService(ChargingSessionRepository chargingSessionRepository,
                                   ReservationRepository reservationRepository,
                                   ChargerRepository chargerRepository,
+                                  ReservationService reservationService,
                                   @Value("${charging.session.auto-start-battery-level:20}") Float autoStartBatteryLevel) {
         this.chargingSessionRepository = chargingSessionRepository;
         this.reservationRepository = reservationRepository;
         this.chargerRepository = chargerRepository;
+        this.reservationService = reservationService;
         this.autoStartBatteryLevel = autoStartBatteryLevel;
     }
 
@@ -51,7 +54,7 @@ public class ChargingSessionService {
         validateBatteryLevel(startBatteryLevel, "Start battery level");
         validateReservationWindow(reservation);
 
-        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
+        if (reservation.getStatus() != ReservationStatus.ACTIVE && reservation.getStatus() != ReservationStatus.IN_PROGRESS) {
             throw new BusinessException(HttpStatus.CONFLICT, "Only active reservations can start a charging session.");
         }
 
@@ -76,7 +79,9 @@ public class ChargingSessionService {
         session.setStartedAt(LocalDateTime.now());
         session.setStatus(ChargingSessionStatus.ACTIVE);
         charger.setStatus(ChargerStatus.OCCUPIED);
-        return chargingSessionRepository.save(session);
+        ChargingSession savedSession = chargingSessionRepository.save(session);
+        reservationService.markInProgress(reservation.getId());
+        return savedSession;
     }
 
     public ChargingSession endSession(Long sessionId, Float endBatteryLevel) {
@@ -149,7 +154,7 @@ public class ChargingSessionService {
         session.setTotalCost(totalCost);
         session.setEndedAt(endedAt);
         session.setStatus(ChargingSessionStatus.COMPLETED);
-        session.getReservation().setStatus(ReservationStatus.COMPLETED);
+        reservationService.markCompleted(session.getReservation().getId());
         charger.setStatus(ChargerStatus.AVAILABLE);
         return chargingSessionRepository.save(session);
     }

@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface ChargingSessionRepository extends JpaRepository<ChargingSession, Long> {
 
     Optional<ChargingSession> findByReservationIdAndStatus(Long reservationId, ChargingSessionStatus status);
+    boolean existsByReservationIdAndStatus(Long reservationId, ChargingSessionStatus status);
+    boolean existsByReservationId(Long reservationId);
     boolean existsByReservation_Charger_IdAndStatus(Long chargerId, ChargingSessionStatus status);
     List<ChargingSession> findByReservation_Vehicle_Id(Long vehicleId);
     List<ChargingSession> findByReservation_Charger_Id(Long chargerId);

@@ -10,9 +10,14 @@ import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.ReservationStatus;
 import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
+import com.example.evsystem.repository.ChargingSessionRepository;
 import com.example.evsystem.repository.ReservationRepository;
 import com.example.evsystem.repository.VehicleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,21 +29,28 @@ import java.util.List;
 @Transactional
 public class ReservationService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
     private static final Duration MAX_RESERVATION_DURATION = Duration.ofHours(2);
     private static final Duration MAX_ADVANCE_WINDOW = Duration.ofHours(24);
 
     private final ReservationRepository reservationRepository;
     private final VehicleRepository vehicleRepository;
     private final ChargerRepository chargerRepository;
+    private final ChargingSessionRepository chargingSessionRepository;
+    private final Duration autoDeleteRetention;
 
     public ReservationService(
             ReservationRepository reservationRepository,
             VehicleRepository vehicleRepository,
-            ChargerRepository chargerRepository
+            ChargerRepository chargerRepository,
+            ChargingSessionRepository chargingSessionRepository,
+            @Value("${reservation.auto-delete-retention-hours:24}") long autoDeleteRetentionHours
     ) {
         this.reservationRepository = reservationRepository;
         this.vehicleRepository = vehicleRepository;
         this.chargerRepository = chargerRepository;
+        this.chargingSessionRepository = chargingSessionRepository;
+        this.autoDeleteRetention = Duration.ofHours(autoDeleteRetentionHours);
     }
 
     public Reservation create(CreateReservationRequest request) {
@@ -111,6 +123,15 @@ public class ReservationService {
             throw new BusinessException(HttpStatus.CONFLICT, "Completed reservations cannot be cancelled.");
         }
 
+        if (reservation.getStatus() == ReservationStatus.EXPIRED) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Expired reservations cannot be cancelled.");
+        }
+
+        if (reservation.getStatus() == ReservationStatus.IN_PROGRESS ||
+                chargingSessionRepository.existsByReservationIdAndStatus(id, com.example.evsystem.enums.ChargingSessionStatus.ACTIVE)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Reservations with an active charging session cannot be cancelled.");
+        }
+
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservationRepository.save(reservation);
     }
@@ -119,7 +140,61 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
 
+        if (reservation.getStatus() == ReservationStatus.IN_PROGRESS ||
+                chargingSessionRepository.existsByReservationIdAndStatus(id, com.example.evsystem.enums.ChargingSessionStatus.ACTIVE)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Reservations with an active charging session cannot be deleted.");
+        }
+
+        if (chargingSessionRepository.existsByReservationId(id)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Reservations with charging session history cannot be deleted.");
+        }
+
         reservationRepository.delete(reservation);
+    }
+
+    public void markInProgress(Long reservationId) {
+        updateStatus(reservationId, ReservationStatus.IN_PROGRESS);
+    }
+
+    public void markCompleted(Long reservationId) {
+        updateStatus(reservationId, ReservationStatus.COMPLETED);
+    }
+
+    @Scheduled(fixedDelayString = "${reservation.auto-expire-delay-ms:30000}")
+    public void autoExpireReservationsWithoutSession() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> expiredReservations = reservationRepository.findByStatusInAndEndTimeLessThanEqual(
+                List.of(ReservationStatus.ACTIVE),
+                now
+        );
+
+        for (Reservation reservation : expiredReservations) {
+            if (chargingSessionRepository.existsByReservationIdAndStatus(reservation.getId(), com.example.evsystem.enums.ChargingSessionStatus.ACTIVE)) {
+                continue;
+            }
+
+            reservation.setStatus(ReservationStatus.EXPIRED);
+            reservationRepository.save(reservation);
+            log.info("Auto-expired reservation {}", reservation.getId());
+        }
+    }
+
+    @Scheduled(fixedDelayString = "${reservation.auto-delete-delay-ms:3600000}")
+    public void autoDeleteTerminalReservations() {
+        LocalDateTime threshold = LocalDateTime.now().minus(autoDeleteRetention);
+        List<Reservation> deletableReservations = reservationRepository.findByStatusInAndEndTimeBefore(
+                List.of(ReservationStatus.CANCELLED, ReservationStatus.COMPLETED, ReservationStatus.EXPIRED),
+                threshold
+        );
+
+        for (Reservation reservation : deletableReservations) {
+            if (chargingSessionRepository.existsByReservationId(reservation.getId())) {
+                continue;
+            }
+
+            reservationRepository.delete(reservation);
+            log.info("Auto-deleted reservation {}", reservation.getId());
+        }
     }
 
     private void validateConnectorCompatibility(Vehicle vehicle, Charger charger) {
@@ -140,7 +215,7 @@ public class ReservationService {
     private void validateNoOverlap(Long chargerId, LocalDateTime startTime, LocalDateTime endTime) {
         boolean overlaps = reservationRepository.existsByChargerIdAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
                 chargerId,
-                List.of(ReservationStatus.ACTIVE),
+                List.of(ReservationStatus.ACTIVE, ReservationStatus.IN_PROGRESS),
                 endTime,
                 startTime
         );
@@ -158,5 +233,12 @@ public class ReservationService {
         if (charger.getStatus() != ChargerStatus.AVAILABLE) {
             throw new BusinessException(HttpStatus.CONFLICT, "Reservations can only be created for available chargers.");
         }
+    }
+
+    private void updateStatus(Long reservationId, ReservationStatus status) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
+        reservation.setStatus(status);
+        reservationRepository.save(reservation);
     }
 }

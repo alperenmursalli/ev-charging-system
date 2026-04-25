@@ -18,6 +18,11 @@ public class ChargingSessionSchemaInitializer {
                     "alter table charging_sessions add constraint charging_sessions_status_check " +
                             "check (status in ('ACTIVE', 'COMPLETED'))"
             );
+            jdbcTemplate.execute("alter table reservations drop constraint if exists reservations_status_check");
+            jdbcTemplate.execute(
+                    "alter table reservations add constraint reservations_status_check " +
+                            "check (status in ('ACTIVE', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED', 'EXPIRED'))"
+            );
         };
     }
 }

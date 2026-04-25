@@ -30,8 +30,9 @@ class ChargingSessionServiceTest {
     private final ChargingSessionRepository chargingSessionRepository = mock(ChargingSessionRepository.class);
     private final ReservationRepository reservationRepository = mock(ReservationRepository.class);
     private final ChargerRepository chargerRepository = mock(ChargerRepository.class);
+    private final ReservationService reservationService = mock(ReservationService.class);
     private final ChargingSessionService chargingSessionService =
-            new ChargingSessionService(chargingSessionRepository, reservationRepository, chargerRepository, 20f);
+            new ChargingSessionService(chargingSessionRepository, reservationRepository, chargerRepository, reservationService, 20f);
 
     @Test
     void startSessionRejectsOccupiedCharger() {
@@ -83,7 +84,7 @@ class ChargingSessionServiceTest {
         assertEquals(24f, result.getConsumedKwh());
         assertEquals(192f, result.getTotalCost());
         verify(charger).setStatus(ChargerStatus.AVAILABLE);
-        assertEquals(ReservationStatus.COMPLETED, reservation.getStatus());
+        verify(reservationService).markCompleted(any());
         assertEquals(ChargingSessionStatus.COMPLETED, result.getStatus());
     }
 
@@ -117,6 +118,7 @@ class ChargingSessionServiceTest {
         assertEquals(100f, session.getEndBatteryLevel());
         assertEquals(640f, session.getTotalCost());
         assertEquals(ChargingSessionStatus.COMPLETED, session.getStatus());
+        verify(reservationService).markCompleted(any());
     }
 
     @Test
@@ -145,6 +147,7 @@ class ChargingSessionServiceTest {
 
         verify(chargingSessionRepository).save(any(ChargingSession.class));
         verify(charger).setStatus(ChargerStatus.OCCUPIED);
+        verify(reservationService).markInProgress(15L);
     }
 
     private com.example.evsystem.entity.Vehicle vehicleWithBatteryCapacity(Double batteryCapacity) {
