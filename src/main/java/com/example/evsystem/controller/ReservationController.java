@@ -6,6 +6,8 @@ import com.example.evsystem.dto.ReservationResponse;
 import com.example.evsystem.service.ReservationService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +29,12 @@ public class ReservationController {
     @PatchMapping("/{id}/cancel")
     public void cancelReservation(@PathVariable Long id) {
         reservationService.cancel(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteReservation(@PathVariable Long id) {
+        reservationService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

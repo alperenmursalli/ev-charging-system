@@ -181,3 +181,79 @@ Content-Type: application/json
   "startTime": "2026-04-25T14:00:00",
   "endTime": "2026-04-25T16:00:00"
 }
+
+###
+POST {{baseUrl}}/reservations
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "chargerId": 1,
+  "startTime": "2026-04-25T12:37:00",
+  "endTime": "2026-04-25T12:39:00"
+}
+
+> {%
+client.global.set("manualReservationId", response.body.id);
+%}
+
+###
+POST {{baseUrl}}/sessions/start?reservationId={{manualReservationId}}&startBatteryLevel=20
+
+> {%
+client.global.set("manualSessionId", response.body.id);
+%}
+
+###
+POST {{baseUrl}}/sessions/{{manualSessionId}}/end?endBatteryLevel=80
+
+###
+GET {{baseUrl}}/sessions/{{manualSessionId}}
+
+###
+GET {{baseUrl}}/reservations/{{manualReservationId}}
+
+###
+GET {{baseUrl}}/chargers/1
+
+###
+# Scheduler auto-complete scenario
+POST {{baseUrl}}/reservations
+Content-Type: application/json
+
+{
+  "vehicleId": 3,
+  "chargerId": 1,
+  "startTime": "2026-04-25T12:01:30",
+  "endTime": "2026-04-25T12:03:30"
+}
+
+> {%
+client.global.set("autoReservationId", response.body.id);
+%}
+
+###
+POST {{baseUrl}}/sessions/start?reservationId={{autoReservationId}}&startBatteryLevel=20
+
+> {%
+client.global.set("autoSessionId", response.body.id);
+%}
+
+###
+# Wait at least 60 seconds after reservation endTime, then run:
+GET {{baseUrl}}/sessions/{{autoSessionId}}
+
+###
+GET {{baseUrl}}/reservations/{{autoReservationId}}
+
+###
+GET {{baseUrl}}/chargers/1
+
+###
+DELETE {{baseUrl}}/reservations/{{manualReservationId}}
+
+###
+DELETE {{baseUrl}}/reservations/{{autoReservationId}}
+
+###
+DELETE {{baseUrl}}/reservations/6

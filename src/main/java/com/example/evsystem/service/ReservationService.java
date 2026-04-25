@@ -115,6 +115,13 @@ public class ReservationService {
         reservationRepository.save(reservation);
     }
 
+    public void delete(Long id) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
+
+        reservationRepository.delete(reservation);
+    }
+
     private void validateConnectorCompatibility(Vehicle vehicle, Charger charger) {
         ConnectorType chargerConnectorType = charger.getConnectorType();
         if (chargerConnectorType == null) {

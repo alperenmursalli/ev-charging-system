@@ -26,7 +26,9 @@ public class ChargingSessionResponse {
         response.chargerId = session.getReservation().getCharger().getId();
         response.startBatteryLevel = session.getStartBatteryLevel();
         response.endBatteryLevel = session.getEndBatteryLevel();
-        response.chargedPercentage = session.getEndBatteryLevel() - session.getStartBatteryLevel();
+        if (session.getEndBatteryLevel() != null && session.getStartBatteryLevel() != null) {
+            response.chargedPercentage = session.getEndBatteryLevel() - session.getStartBatteryLevel();
+        }
         response.consumedKwh = session.getConsumedKwh();
         response.totalCost = session.getTotalCost();
         response.startedAt = session.getStartedAt();

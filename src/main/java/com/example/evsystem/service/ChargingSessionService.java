@@ -10,6 +10,9 @@ import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
 import com.example.evsystem.repository.ChargingSessionRepository;
 import com.example.evsystem.repository.ReservationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -25,16 +28,21 @@ import java.util.List;
 @Transactional
 public class ChargingSessionService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChargingSessionService.class);
+
     private final ChargingSessionRepository chargingSessionRepository;
     private final ReservationRepository reservationRepository;
     private final ChargerRepository chargerRepository;
+    private final Float autoStartBatteryLevel;
 
     public ChargingSessionService(ChargingSessionRepository chargingSessionRepository,
                                   ReservationRepository reservationRepository,
-                                  ChargerRepository chargerRepository) {
+                                  ChargerRepository chargerRepository,
+                                  @Value("${charging.session.auto-start-battery-level:20}") Float autoStartBatteryLevel) {
         this.chargingSessionRepository = chargingSessionRepository;
         this.reservationRepository = reservationRepository;
         this.chargerRepository = chargerRepository;
+        this.autoStartBatteryLevel = autoStartBatteryLevel;
     }
 
     public ChargingSession startSession(Long reservationId, Float startBatteryLevel) {
@@ -85,6 +93,28 @@ public class ChargingSessionService {
         return completeSession(session, endBatteryLevel, calculateConsumedKwh(session, endBatteryLevel), LocalDateTime.now());
     }
 
+    @Scheduled(fixedDelayString = "${charging.session.auto-start-delay-ms:30000}")
+    public void autoStartDueReservations() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Reservation> dueReservations = reservationRepository
+                .findByStatusAndStartTimeLessThanEqualAndEndTimeGreaterThan(ReservationStatus.ACTIVE, now, now);
+
+        for (Reservation reservation : dueReservations) {
+            if (chargingSessionRepository.findByReservationIdAndStatus(reservation.getId(), ChargingSessionStatus.ACTIVE).isPresent()) {
+                continue;
+            }
+
+            try {
+                startSession(reservation.getId(), autoStartBatteryLevel);
+                log.info("Auto-started charging session for reservation {}", reservation.getId());
+            } catch (BusinessException ignored) {
+                log.warn("Auto-start skipped for reservation {}: {}", reservation.getId(), ignored.getMessage());
+            } catch (Exception exception) {
+                log.error("Auto-start failed for reservation {}", reservation.getId(), exception);
+            }
+        }
+    }
+
     @Scheduled(fixedDelayString = "${charging.session.auto-end-delay-ms:60000}")
     public void autoCompleteExpiredSessions() {
         LocalDateTime now = LocalDateTime.now();
@@ -93,6 +123,7 @@ public class ChargingSessionService {
 
         for (ChargingSession session : expiredSessions) {
             completeSession(session, estimateAutoEndBatteryLevel(session, now), estimateAutoConsumedKwh(session, now), now);
+            log.info("Auto-completed charging session {}", session.getId());
         }
     }
 
