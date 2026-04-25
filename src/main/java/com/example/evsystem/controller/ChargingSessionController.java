@@ -1,8 +1,13 @@
 package com.example.evsystem.controller;
 
-import com.example.evsystem.entity.ChargingSession;
+import com.example.evsystem.dto.ChargingSessionResponse;
 import com.example.evsystem.service.ChargingSessionService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -17,25 +22,27 @@ public class ChargingSessionController {
     }
 
     @PostMapping("/start")
-    public ChargingSession startSession(@RequestParam Long reservationId,
-                                        @RequestParam Float startBatteryLevel) {
-        return chargingSessionService.startSession(reservationId, startBatteryLevel);
+    public ChargingSessionResponse startSession(@RequestParam Long reservationId,
+                                                @RequestParam Float startBatteryLevel) {
+        return ChargingSessionResponse.from(chargingSessionService.startSession(reservationId, startBatteryLevel));
     }
 
     @PostMapping("/{id}/end")
-    public ChargingSession endSession(@PathVariable Long id,
-                                      @RequestParam Float endBatteryLevel,
-                                      @RequestParam Float consumedKwh) {
-        return chargingSessionService.endSession(id, endBatteryLevel, consumedKwh);
+    public ChargingSessionResponse endSession(@PathVariable Long id,
+                                              @RequestParam Float endBatteryLevel,
+                                              @RequestParam Float consumedKwh) {
+        return ChargingSessionResponse.from(chargingSessionService.endSession(id, endBatteryLevel, consumedKwh));
     }
 
     @GetMapping
-    public List<ChargingSession> getAllSessions() {
-        return chargingSessionService.getAllSessions();
+    public List<ChargingSessionResponse> getAllSessions() {
+        return chargingSessionService.getAllSessions().stream()
+                .map(ChargingSessionResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public ChargingSession getSession(@PathVariable Long id) {
-        return chargingSessionService.getSessionById(id);
+    public ChargingSessionResponse getSession(@PathVariable Long id) {
+        return ChargingSessionResponse.from(chargingSessionService.getSessionById(id));
     }
 }

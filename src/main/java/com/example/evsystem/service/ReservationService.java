@@ -1,9 +1,11 @@
 package com.example.evsystem.service;
 
 import com.example.evsystem.dto.CreateReservationRequest;
+import com.example.evsystem.dto.ReservationResponse;
 import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.Reservation;
 import com.example.evsystem.entity.Vehicle;
+import com.example.evsystem.enums.ChargerStatus;
 import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.ReservationStatus;
 import com.example.evsystem.exception.BusinessException;
@@ -42,11 +44,12 @@ public class ReservationService {
     public Reservation create(CreateReservationRequest request) {
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Vehicle not found."));
-        Charger charger = chargerRepository.findById(request.getChargerId())
+        Charger charger = chargerRepository.findByIdForUpdate(request.getChargerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Charger not found."));
 
         validateTimes(request.getStartTime(), request.getEndTime());
         validateConnectorCompatibility(vehicle, charger);
+        validateChargerAvailability(charger);
         validateNoOverlap(request.getChargerId(), request.getStartTime(), request.getEndTime());
 
         Reservation reservation = new Reservation();
@@ -56,6 +59,24 @@ public class ReservationService {
         reservation.setEndTime(request.getEndTime());
         reservation.setStatus(ReservationStatus.ACTIVE);
         return reservationRepository.save(reservation);
+    }
+
+    public ReservationResponse createResponse(CreateReservationRequest request) {
+        return ReservationResponse.from(create(request));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getAllResponses() {
+        return reservationRepository.findAll().stream()
+                .map(ReservationResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ReservationResponse getResponseById(Long id) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
+        return ReservationResponse.from(reservation);
     }
 
     private void validateTimes(LocalDateTime startTime, LocalDateTime endTime) {
@@ -119,6 +140,16 @@ public class ReservationService {
 
         if (overlaps) {
             throw new BusinessException(HttpStatus.CONFLICT, "There is already a reservation for this charger in the selected time range.");
+        }
+    }
+
+    private void validateChargerAvailability(Charger charger) {
+        if (charger.getStatus() == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Charger status is required.");
+        }
+
+        if (charger.getStatus() != ChargerStatus.AVAILABLE) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Reservations can only be created for available chargers.");
         }
     }
 }

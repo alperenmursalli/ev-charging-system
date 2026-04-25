@@ -1,11 +1,18 @@
 package com.example.evsystem.controller;
 
+import com.example.evsystem.dto.VehicleResponse;
 import com.example.evsystem.entity.Vehicle;
 import com.example.evsystem.service.VehicleService;
-import org.springframework.web.bind.annotation.*;
-
 import jakarta.validation.Valid;
+
 import java.util.List;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/vehicles")
@@ -17,21 +24,20 @@ public class VehicleController {
         this.vehicleService = vehicleService;
     }
 
-    // GÖREV: Araç Ekleme Endpoint'i
     @PostMapping
-    public Vehicle createVehicle(@Valid @RequestBody Vehicle vehicle) {
-        return vehicleService.save(vehicle);
+    public VehicleResponse createVehicle(@Valid @RequestBody Vehicle vehicle) {
+        return VehicleResponse.from(vehicleService.save(vehicle));
     }
 
-    // GÖREV: Araç Listeleme Endpoint'i
     @GetMapping
-    public List<Vehicle> getAllVehicles() {
-        return vehicleService.getAllVehicles();
+    public List<VehicleResponse> getAllVehicles() {
+        return vehicleService.getAllVehicles().stream()
+                .map(VehicleResponse::from)
+                .toList();
     }
 
-    // GÖREV: Araç Detayını Getirme Endpoint'i
     @GetMapping("/{id}")
-    public Vehicle getVehicleById(@PathVariable Long id) {
-        return vehicleService.getVehicleById(id);
+    public VehicleResponse getVehicleById(@PathVariable Long id) {
+        return VehicleResponse.from(vehicleService.getVehicleById(id));
     }
 }

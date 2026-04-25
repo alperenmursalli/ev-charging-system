@@ -1,5 +1,7 @@
 package com.example.evsystem.controller;
 
+import com.example.evsystem.dto.ChargerResponse;
+import com.example.evsystem.dto.StationResponse;
 import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.Station;
 import com.example.evsystem.service.ChargerService;
@@ -24,28 +26,33 @@ public class StationController {
     }
 
     @PostMapping
-    public ResponseEntity<Station> createStation(@Valid @RequestBody Station station) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(stationService.save(station));
+    public ResponseEntity<StationResponse> createStation(@Valid @RequestBody Station station) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(StationResponse.from(stationService.save(station)));
     }
 
     @GetMapping
-    public ResponseEntity<List<Station>> getAllStations() {
-        return ResponseEntity.ok(stationService.getAll());
+    public ResponseEntity<List<StationResponse>> getAllStations() {
+        return ResponseEntity.ok(stationService.getAll().stream()
+                .map(StationResponse::from)
+                .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Station> getStationById(@PathVariable Long id) {
-        return ResponseEntity.ok(stationService.getById(id));
+    public ResponseEntity<StationResponse> getStationById(@PathVariable Long id) {
+        return ResponseEntity.ok(StationResponse.from(stationService.getById(id)));
     }
 
     @GetMapping("/{id}/chargers")
-    public ResponseEntity<List<Charger>> getChargersByStation(@PathVariable Long id) {
-        return ResponseEntity.ok(chargerService.getByStationId(id));
+    public ResponseEntity<List<ChargerResponse>> getChargersByStation(@PathVariable Long id) {
+        List<Charger> chargers = chargerService.getByStationId(id);
+        return ResponseEntity.ok(chargers.stream()
+                .map(ChargerResponse::from)
+                .toList());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Station> updateStation(@PathVariable Long id, @Valid @RequestBody Station station) {
-        return ResponseEntity.ok(stationService.update(id, station));
+    public ResponseEntity<StationResponse> updateStation(@PathVariable Long id, @Valid @RequestBody Station station) {
+        return ResponseEntity.ok(StationResponse.from(stationService.update(id, station)));
     }
 
     @DeleteMapping("/{id}")

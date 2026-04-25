@@ -1,5 +1,6 @@
 package com.example.evsystem.controller;
 
+import com.example.evsystem.dto.ChargerResponse;
 import com.example.evsystem.entity.Charger;
 import com.example.evsystem.service.ChargerService;
 import jakarta.validation.Valid;
@@ -20,23 +21,25 @@ public class ChargerController {
     }
 
     @PostMapping
-    public ResponseEntity<Charger> createCharger(@Valid @RequestBody Charger charger) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(chargerService.save(charger));
+    public ResponseEntity<ChargerResponse> createCharger(@Valid @RequestBody Charger charger) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ChargerResponse.from(chargerService.save(charger)));
     }
 
     @GetMapping
-    public ResponseEntity<List<Charger>> getAllChargers() {
-        return ResponseEntity.ok(chargerService.getAll());
+    public ResponseEntity<List<ChargerResponse>> getAllChargers() {
+        return ResponseEntity.ok(chargerService.getAll().stream()
+                .map(ChargerResponse::from)
+                .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Charger> getChargerById(@PathVariable Long id) {
-        return ResponseEntity.ok(chargerService.getById(id));
+    public ResponseEntity<ChargerResponse> getChargerById(@PathVariable Long id) {
+        return ResponseEntity.ok(ChargerResponse.from(chargerService.getById(id)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Charger> updateCharger(@PathVariable Long id, @Valid @RequestBody Charger charger) {
-        return ResponseEntity.ok(chargerService.update(id, charger));
+    public ResponseEntity<ChargerResponse> updateCharger(@PathVariable Long id, @Valid @RequestBody Charger charger) {
+        return ResponseEntity.ok(ChargerResponse.from(chargerService.update(id, charger)));
     }
 
     @DeleteMapping("/{id}")

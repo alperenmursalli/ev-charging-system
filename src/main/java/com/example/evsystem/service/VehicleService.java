@@ -1,13 +1,17 @@
 package com.example.evsystem.service;
 
 import com.example.evsystem.entity.Vehicle;
+import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.VehicleRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 
 @Service
+@Transactional
 public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
@@ -18,18 +22,18 @@ public class VehicleService {
 
 
     public Vehicle save(Vehicle vehicle) {
+        if (vehicleRepository.existsByPlateNumberIgnoreCase(vehicle.getPlateNumber())) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Vehicle with this plate number already exists.");
+        }
         return vehicleRepository.save(vehicle);
     }
 
-    // GÖREV: Araç Listeleme
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.findAll();
     }
 
-    // GÖREV: Araç Detayını Getirme
     public Vehicle getVehicleById(Long id) {
-        // Eğer ID yoksa hata fırlatıyoruz (İleride özel hata sınıfları yazabilirsiniz)
         return vehicleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Araç bulunamadı! ID: " + id));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Vehicle not found with id: " + id));
     }
 }

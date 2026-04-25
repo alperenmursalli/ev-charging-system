@@ -33,4 +33,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status)
                 .body(new ApiError(status.value(), status.getReasonPhrase(), detail));
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleUnexpectedException(Exception exception) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        return ResponseEntity.status(status)
+                .body(new ApiError(status.value(), status.getReasonPhrase(), exception.getMessage()));
+    }
 }

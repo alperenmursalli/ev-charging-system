@@ -5,6 +5,8 @@ import com.example.evsystem.dto.CreateReservationRequest;
 import com.example.evsystem.dto.ReservationResponse;
 import com.example.evsystem.service.ReservationService;
 import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,8 +29,18 @@ public class ReservationController {
         reservationService.cancel(id);
     }
 
+    @GetMapping
+    public List<ReservationResponse> getAllReservations() {
+        return reservationService.getAllResponses();
+    }
+
+    @GetMapping("/{id}")
+    public ReservationResponse getReservationById(@PathVariable Long id) {
+        return reservationService.getResponseById(id);
+    }
+
     @PostMapping
     public ReservationResponse createReservation(@Valid @RequestBody CreateReservationRequest request) {
-        return ReservationResponse.from(reservationService.create(request));
+        return reservationService.createResponse(request);
     }
 }

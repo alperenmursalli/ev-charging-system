@@ -171,3 +171,13 @@ Content-Type: application/json
   "status": "AVAILABLE"
 }
 
+###
+POST http://localhost:8081/reservations
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "chargerId": 1,
+  "startTime": "2026-04-25T14:00:00",
+  "endTime": "2026-04-25T16:00:00"
+}

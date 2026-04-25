@@ -5,10 +5,12 @@ import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class ChargerService {
 
     private final ChargerRepository chargerRepository;
@@ -37,15 +39,19 @@ public class ChargerService {
     }
 
     public List<Charger> getByStationId(Long stationId) {
-        return chargerRepository.findAll().stream()
-                .filter(c -> c.getStation() != null && c.getStation().getId().equals(stationId))
-                .toList();
+        return chargerRepository.findByStationId(stationId);
     }
 
     public Charger update(Long id, Charger updated) {
         Charger charger = getById(id);
         if (updated.getPricePerKwh() != null && updated.getPricePerKwh() < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Price per kWh cannot be negative");
+        }
+        if (updated.getChargerCode() != null) {
+            if (chargerRepository.existsByChargerCodeIgnoreCaseAndIdNot(updated.getChargerCode(), id)) {
+                throw new BusinessException(HttpStatus.CONFLICT, "Charger with this code already exists");
+            }
+            charger.setChargerCode(updated.getChargerCode());
         }
         if (updated.getChargerType() != null) charger.setChargerType(updated.getChargerType());
         if (updated.getPowerOutput() != null) charger.setPowerOutput(updated.getPowerOutput());

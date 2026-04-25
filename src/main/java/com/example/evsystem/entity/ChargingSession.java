@@ -1,7 +1,16 @@
 package com.example.evsystem.entity;
 
-import com.example.evsystem.enums.ChargerStatus;
-import jakarta.persistence.*;
+import com.example.evsystem.enums.ChargingSessionStatus;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,7 +33,7 @@ public class ChargingSession {
     private LocalDateTime endedAt;
 
     @Enumerated(EnumType.STRING)
-    private ChargerStatus status = ChargerStatus.AVAILABLE;
+    private ChargingSessionStatus status = ChargingSessionStatus.ACTIVE;
 
     public ChargingSession() {}
 
@@ -36,7 +45,7 @@ public class ChargingSession {
     public Float getTotalCost()         { return totalCost; }
     public LocalDateTime getStartedAt() { return startedAt; }
     public LocalDateTime getEndedAt()   { return endedAt; }
-    public ChargerStatus getStatus()    { return status; }
+    public ChargingSessionStatus getStatus()    { return status; }
 
     public void setReservation(Reservation reservation)       { this.reservation = reservation; }
     public void setStartBatteryLevel(Float startBatteryLevel) { this.startBatteryLevel = startBatteryLevel; }
@@ -45,5 +54,5 @@ public class ChargingSession {
     public void setTotalCost(Float totalCost)                 { this.totalCost = totalCost; }
     public void setStartedAt(LocalDateTime startedAt)         { this.startedAt = startedAt; }
     public void setEndedAt(LocalDateTime endedAt)             { this.endedAt = endedAt; }
-    public void setStatus(ChargerStatus status)               { this.status = status; }
+    public void setStatus(ChargingSessionStatus status)               { this.status = status; }
 }

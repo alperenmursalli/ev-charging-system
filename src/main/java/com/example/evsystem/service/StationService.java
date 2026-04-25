@@ -5,10 +5,12 @@ import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.StationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class StationService {
 
     private final StationRepository stationRepository;
@@ -38,7 +40,17 @@ public class StationService {
 
     public Station update(Long id, Station updated) {
         Station station = getById(id);
-        if (updated.getName() != null) station.setName(updated.getName());
+        if (updated.getName() != null) {
+            if (updated.getName().isBlank()) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "Station name cannot be empty");
+            }
+            stationRepository.findByNameIgnoreCase(updated.getName())
+                    .filter(existing -> !existing.getId().equals(id))
+                    .ifPresent(existing -> {
+                        throw new BusinessException(HttpStatus.CONFLICT, "Station with this name already exists");
+                    });
+            station.setName(updated.getName());
+        }
         if (updated.getAddress() != null) station.setAddress(updated.getAddress());
         if (updated.getLatitude() != null) station.setLatitude(updated.getLatitude());
         if (updated.getLongitude() != null) station.setLongitude(updated.getLongitude());
