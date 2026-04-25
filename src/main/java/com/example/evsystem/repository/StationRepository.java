@@ -1,4 +1,8 @@
 package com.example.evsystem.repository;
 
-public interface StationRepository {
+import com.example.evsystem.entity.Station;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface StationRepository extends JpaRepository<Station, Long> {
+    boolean existsByNameIgnoreCase(String name);
 }
