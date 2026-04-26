@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title>Rezervasyon Oluştur – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+ <style>
+ body { background: #f1f5f9; }
+
+ .page-shell {
+ max-width: 680px;
+ margin: 0 auto;
+ padding-bottom: 3rem;
+ }
+
+ /* Üst başlık bandı */
+ .page-hero {
+ background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
+ border-radius: 18px;
+ padding: 1.75rem 2rem;
+ margin-bottom: 1.5rem;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 1rem;
+ }
+ .page-hero h1 { color: #fff; font-size: 1.35rem; font-weight: 800; margin: 0; }
+ .page-hero p { color: #bfdbfe; font-size: 0.82rem; margin: 0.2rem 0 0; }
+ .back-btn {
+ background: rgba(255,255,255,0.15);
+ color: #fff;
+ border: 1px solid rgba(255,255,255,0.25);
+ border-radius: 10px;
+ padding: 0.45rem 1rem;
+ font-size: 0.84rem;
+ font-weight: 500;
+ text-decoration: none;
+ white-space: nowrap;
+ transition: background 0.15s;
+ flex-shrink: 0;
+ }
+ .back-btn:hover { background: rgba(255,255,255,0.25); }
+
+ /* Hata banner */
+ .error-banner {
+ display: flex; align-items: center; gap: 0.65rem;
+ background: #fef2f2; border: 1.5px solid #fca5a5;
+ border-radius: 12px; padding: 0.9rem 1.1rem;
+ color: #b91c1c; font-size: 0.88rem; font-weight: 500;
+ margin-bottom: 1.25rem;
+ }
+ .error-banner .eicon { font-size: 1.1rem; flex-shrink:0; }
+
+ /* Ana form kartı */
+ .form-card {
+ background: #fff;
+ border-radius: 18px;
+ box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+ overflow: hidden;
+ }
+
+ /* Kural şeridi */
+ .rule-strip {
+ background: linear-gradient(90deg, #eff6ff, #f0f9ff);
+ border-bottom: 1px solid #bae6fd;
+ padding: 0.8rem 1.5rem;
+ display: flex; align-items: center; gap: 0.6rem;
+ font-size: 0.82rem; color: #0369a1;
+ }
+ .rule-strip strong { color: #1d4ed8; }
+
+ /* Form içi */
+ .form-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+ /* Section başlık */
+ .sec-title {
+ font-size: 0.68rem; font-weight: 700;
+ letter-spacing: 0.1em; text-transform: uppercase;
+ color: #94a3b8; margin-bottom: 0.45rem;
+ }
+
+ /* Select */
+ .fancy-select {
+ width: 100%;
+ padding: 0.75rem 2.5rem 0.75rem 1rem;
+ border: 1.5px solid #e2e8f0;
+ border-radius: 12px;
+ font-size: 0.9rem;
+ background: #f8fafc;
+ color: #1e293b;
+ appearance: none;
+ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+ background-repeat: no-repeat;
+ background-position: right 0.9rem center;
+ transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+ cursor: pointer;
+ }
+ .fancy-select:focus {
+ outline: none; border-color: #2563eb;
+ background-color: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+ }
+ .select-hint { font-size: 0.75rem; color: #94a3b8; margin-top: 0.3rem; display: flex; align-items: center; gap: 0.3rem; }
+
+ /* Separator */
+ .sep {
+ display: flex; align-items: center; gap: 0.75rem;
+ color: #cbd5e1; font-size: 0.75rem; font-weight: 600;
+ }
+ .sep::before, .sep::after { content:''; flex:1; height:1px; background:#e2e8f0; }
+
+ /* Tarih + saat grid */
+ .datetime-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 1rem;
+ }
+ .dt-box {
+ border: 1.5px solid #e2e8f0;
+ border-radius: 14px;
+ padding: 1rem 1.1rem;
+ background: #f8fafc;
+ transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+ }
+ .dt-box:focus-within {
+ border-color: #2563eb;
+ background: #fff;
+ box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+ }
+ .dt-box .lbl {
+ font-size: 0.68rem; font-weight: 700;
+ text-transform: uppercase; letter-spacing: 0.08em;
+ color: #94a3b8; margin-bottom: 0.5rem;
+ display: flex; align-items: center; gap: 0.35rem;
+ }
+ .dt-box input[type="date"],
+ .dt-box input[type="time"] {
+ display: block; width: 100%;
+ border: none; background: transparent;
+ font-family: 'Inter', sans-serif;
+ color: #1e293b; outline: none;
+ }
+ .dt-box input[type="date"] { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
+ .dt-box input[type="time"] { font-size: 1.5rem; font-weight: 800; }
+ .dt-box input[type="time"]::-webkit-datetime-edit-ampm-field { display: none; }
+
+ /* Süre göstergesi */
+ .duration-bar {
+ display: flex; align-items: center; justify-content: space-between;
+ background: #f8fafc; border: 1px solid #e2e8f0;
+ border-radius: 10px; padding: 0.65rem 1rem;
+ font-size: 0.82rem;
+ }
+ .duration-pill {
+ display: inline-flex; align-items: center; gap: 0.3rem;
+ padding: 0.2rem 0.75rem; border-radius: 999px;
+ font-weight: 700; font-size: 0.8rem;
+ }
+ .duration-ok { background: #dcfce7; color: #15803d; }
+ .duration-warn { background: #fef9c3; color: #92400e; }
+ .duration-bad { background: #fee2e2; color: #b91c1c; }
+
+ /* Submit */
+ .submit-row { display: flex; gap: 0.75rem; }
+ .submit-btn {
+ flex: 1; padding: 0.9rem;
+ font-size: 0.97rem; font-weight: 700;
+ border-radius: 12px; border: none;
+ background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+ color: #fff; cursor: pointer;
+ transition: filter 0.15s, transform 0.1s;
+ box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+ }
+ .submit-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+ .cancel-btn {
+ padding: 0.9rem 1.4rem;
+ font-size: 0.9rem; font-weight: 600;
+ border-radius: 12px;
+ border: 1.5px solid #e2e8f0;
+ background: #fff; color: #64748b;
+ cursor: pointer; text-decoration: none;
+ display: flex; align-items: center;
+ transition: border-color 0.15s, color 0.15s;
+ }
+ .cancel-btn:hover { border-color: #94a3b8; color: #1e293b; }
+
+ @media (max-width: 520px) {
+ .datetime-grid { grid-template-columns: 1fr; }
+ .page-hero { flex-direction: column; align-items: flex-start; }
+ }
+ body.dark { background: #0f172a !important; }
+ body.dark .form-card { background: #1e293b; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+ body.dark .rule-strip { background: linear-gradient(90deg,#1e3a5f,#1e293b); border-color:#1d4ed8; color:#93c5fd; }
+ body.dark .rule-strip strong { color:#60a5fa; }
+ body.dark .fancy-select { background:#0f172a; color:#f1f5f9; border-color:#334155; }
+ body.dark .fancy-select:focus { border-color:#2563eb; }
+ body.dark .dt-box { background:#0f172a; border-color:#334155; }
+ body.dark .dt-box:focus-within { border-color:#2563eb; background:#0f172a; }
+ body.dark .dt-box input { color:#f1f5f9; }
+ body.dark .dt-box .lbl { color:#64748b; }
+ body.dark .duration-bar { background:#0f172a; border-color:#334155; color:#94a3b8; }
+ body.dark .sep { color:#475569; }
+ body.dark .sep::before, body.dark .sep::after { background:#334155; }
+ body.dark .select-hint { color:#64748b; }
+ body.dark .cancel-btn { background:#1e293b; color:#94a3b8; border-color:#334155; }
+ body.dark .cancel-btn:hover { border-color:#64748b; color:#f1f5f9; }
+ body.dark .error-banner { background:#3b1a1a; border-color:#991b1b; color:#fca5a5; }
+ body.dark .sec-title { color:#475569; }
+ </style>
+</head>
+<body>
+<nav class="navbar">
+ <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
+ <div class="navbar-links">
+ <a th:href="@{/ui/home}">Ana Sayfa</a>
+ <a th:href="@{/ui/vehicles}">Araçlar</a>
+ <a th:href="@{/ui/stations}">İstasyonlar</a>
+ <a th:href="@{/ui/stations/map}"> Harita</a>
+ <a th:href="@{/ui/reservations}" class="active">Rezervasyonlar</a>
+ <a th:href="@{/ui/sessions/start}">Şarj Et</a>
+ <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
+ <span id="darkIcon"></span>
+ <span class="toggle-label" id="darkLabel">Dark</span>
+ </button>
+ </div>
+</nav>
+<script>
+ (function(){
+ var d = localStorage.getItem("evDark");
+ if(d === "1") { document.body.classList.add("dark"); }
+ })();
+ function toggleDark() {
+ var on = document.body.classList.toggle("dark");
+ localStorage.setItem("evDark", on ? "1" : "0");
+ document.getElementById("darkIcon").textContent = on ? "" : "";
+ document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+ }
+ window.addEventListener("DOMContentLoaded", function(){
+ var on = document.body.classList.contains("dark");
+ var btn = document.getElementById("darkBtn");
+ if(btn){
+ document.getElementById("darkIcon").textContent = on ? "" : "";
+ document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+ }
+ });
+</script>
+
+<div class="page-wrapper">
+ <div class="page-shell">
+
+ <!-- Üst başlık -->
+ <div class="page-hero">
+ <div>
+ <h1>Rezervasyon Oluştur</h1>
+ <p>Araç ve charger seçip zaman dilimi belirleyin</p>
+ </div>
+ <a th:href="@{/ui/reservations}" class="back-btn">← Geri</a>
+ </div>
+
+ <!-- Hata mesajı -->
+ <div th:if="${errorMsg}" class="error-banner">
+ 
+ <span th:text="${errorMsg}"></span>
+ </div>
+
+ <!-- Form kartı -->
+ <div class="form-card">
+
+ <!-- Kural şeridi -->
+ <div class="rule-strip">
+ ℹ &nbsp;Konnektör tipleri <strong>uyuşmalı</strong> &nbsp;·&nbsp; Maks. <strong>2 saat</strong> &nbsp;·&nbsp; En fazla <strong>24 saat ileriye</strong> rezervasyon yapılabilir
+ </div>
+
+ <div class="form-body">
+ <form th:action="@{/ui/reservations/create}" method="post" id="resForm">
+ <input type="hidden" name="startTime" id="startTimeHidden"/>
+ <input type="hidden" name="endTime" id="endTimeHidden"/>
+
+ <!-- Araç seçimi -->
+ <div>
+ <div class="sec-title">Araç</div>
+ <select name="vehicleId" class="fancy-select" required>
+ <option value="">Araç seçin...</option>
+ <option th:each="v : ${vehicles}"
+ th:value="${v.id}"
+ th:selected="${v.id == selectedVehicleId}"
+ th:text="${v.brand} + ' ' + ${v.model} + ' · ' + ${v.plateNumber} + ' · ' + ${v.connectorType}"></option>
+ </select>
+ </div>
+
+ <!-- Charger seçimi -->
+ <div>
+ <div class="sec-title">Charger</div>
+ <select name="chargerId" class="fancy-select" required>
+ <option value="">Charger seçin...</option>
+ <option th:each="c : ${chargers}"
+ th:value="${c.id}"
+ th:selected="${c.id == selectedChargerId}"
+ th:text="${c.chargerCode != null ? c.chargerCode : 'Charger #' + c.id} + ' · ' + ${c.connectorType} + ' · ' + ${c.powerOutput} + ' · ₺' + ${c.pricePerKwh} + '/kWh · ' + ${c.status}"></option>
+ </select>
+ <div class="select-hint">
+ <span style="color:#22c55e;"></span> Sadece AVAILABLE charger'lar rezerve edilebilir
+ </div>
+ </div>
+
+ <!-- Ayraç -->
+ <div class="sep">Zaman Seçimi</div>
+
+ <!-- Tarih + saat -->
+ <div class="datetime-grid">
+ <div class="dt-box">
+ <div class="lbl">Başlangıç</div>
+ <input type="date" id="startDate"/>
+ <input type="time" id="startTime" step="60"/>
+ </div>
+ <div class="dt-box">
+ <div class="lbl">Bitiş</div>
+ <input type="date" id="endDate"/>
+ <input type="time" id="endTime" step="60"/>
+ </div>
+ </div>
+
+ <!-- Süre göstergesi -->
+ <div class="duration-bar" id="durationBar" style="display:none;">
+ <span style="color:#64748b;">⏱ Rezervasyon süresi</span>
+ <span class="duration-pill duration-ok" id="durationPill">–</span>
+ </div>
+
+ <!-- Butonlar -->
+ <div class="submit-row">
+ <button type="submit" class="submit-btn" onclick="return buildDatetimes()">
+ Rezervasyon Oluştur
+ </button>
+ <a th:href="@{/ui/reservations}" class="cancel-btn">İptal</a>
+ </div>
+
+ </form>
+ </div>
+ </div>
+
+ </div>
+</div>
+
+<footer>EV Charging System &copy; 2026</footer>
+
+<script>
+ const pad = n => String(n).padStart(2, '0');
+
+ // Bugünün ve yarının tarihi
+ const now = new Date();
+ const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+
+ // Min tarih = bugün, max tarih = bugün + 24 saat (yarın aynı saat)
+ const maxDt = new Date(now.getTime() + 24 * 3600000);
+ const maxStr = `${maxDt.getFullYear()}-${pad(maxDt.getMonth()+1)}-${pad(maxDt.getDate())}`;
+
+ const startDateIn = document.getElementById('startDate');
+ const endDateIn = document.getElementById('endDate');
+ const startTimeIn = document.getElementById('startTime');
+ const endTimeIn = document.getElementById('endTime');
+
+ // Varsayılanlar: şimdiden 5 dk sonra başlangıç, 1 saat sonra bitiş
+ const defStart = new Date(now.getTime() + 5 * 60000);
+ const defEnd = new Date(now.getTime() + 65 * 60000);
+
+ startDateIn.min = todayStr;
+ startDateIn.max = maxStr;
+ endDateIn.min = todayStr;
+ endDateIn.max = maxStr;
+
+ startDateIn.value = todayStr;
+ endDateIn.value = todayStr;
+ startTimeIn.value = `${pad(defStart.getHours())}:${pad(defStart.getMinutes())}`;
+ endTimeIn.value = `${pad(defEnd.getHours())}:${pad(defEnd.getMinutes())}`;
+
+ function getDatetime(dateIn, timeIn) {
+ if (!dateIn.value || !timeIn.value) return null;
+ return new Date(`${dateIn.value}T${timeIn.value}:00`);
+ }
+
+ function updateDuration() {
+ const bar = document.getElementById('durationBar');
+ const pill = document.getElementById('durationPill');
+ const s = getDatetime(startDateIn, startTimeIn);
+ const e = getDatetime(endDateIn, endTimeIn);
+ if (!s || !e) { bar.style.display = 'none'; return; }
+ bar.style.display = 'flex';
+ const diffMin = Math.round((e - s) / 60000);
+ if (diffMin <= 0) {
+ pill.className = 'duration-pill duration-bad';
+ pill.textContent = ' Geçersiz aralık';
+ } else if (diffMin > 120) {
+ const h = Math.floor(diffMin/60), m = diffMin%60;
+ pill.className = 'duration-pill duration-bad';
+ pill.textContent = `${h}s ${m}dk – Maks. 2 saat!`;
+ } else {
+ const h = Math.floor(diffMin/60), m = diffMin%60;
+ pill.className = 'duration-pill duration-ok';
+ pill.textContent = `${h > 0 ? h + ' saat ' : ''}${m > 0 ? m + ' dakika' : ''}`;
+ }
+ }
+
+ [startDateIn, endDateIn, startTimeIn, endTimeIn].forEach(el =>
+ el.addEventListener('change', updateDuration));
+ updateDuration();
+
+ function buildDatetimes() {
+ const s = getDatetime(startDateIn, startTimeIn);
+ const e = getDatetime(endDateIn, endTimeIn);
+
+ if (!s || !e) { alert('Lütfen tarih ve saat alanlarını doldurun.'); return false; }
+ if (e <= s) { alert('Bitiş zamanı başlangıçtan sonra olmalı.'); return false; }
+
+ const diffMin = Math.round((e - s) / 60000);
+ if (diffMin > 120) { alert('Maksimum 2 saat rezervasyon yapılabilir.'); return false; }
+
+ const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+ document.getElementById('startTimeHidden').value = fmt(s);
+ document.getElementById('endTimeHidden').value = fmt(e);
+ return true;
+ }
+</script>
+</body>
+</html>

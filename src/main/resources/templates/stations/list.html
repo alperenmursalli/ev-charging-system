@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title>İstasyonlar – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<nav class="navbar">
+ <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
+ <div class="navbar-links">
+ <a th:href="@{/ui/home}">Ana Sayfa</a>
+ <a th:href="@{/ui/vehicles}">Araçlar</a>
+ <a th:href="@{/ui/stations}" class="active">İstasyonlar</a>
+ <a th:href="@{/ui/stations/map}"> Harita</a>
+ <a th:href="@{/ui/reservations}">Rezervasyonlar</a>
+ <a th:href="@{/ui/sessions/start}">Şarj Et</a>
+ <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
+ <span id="darkIcon"></span>
+ <span class="toggle-label" id="darkLabel">Dark</span>
+ </button>
+ </div>
+</nav>
+<script>
+ (function(){
+ var d = localStorage.getItem("evDark");
+ if(d === "1") { document.body.classList.add("dark"); }
+ })();
+ function toggleDark() {
+ var on = document.body.classList.toggle("dark");
+ localStorage.setItem("evDark", on ? "1" : "0");
+ document.getElementById("darkIcon").textContent = on ? "" : "";
+ document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+ }
+ window.addEventListener("DOMContentLoaded", function(){
+ var on = document.body.classList.contains("dark");
+ var btn = document.getElementById("darkBtn");
+ if(btn){
+ document.getElementById("darkIcon").textContent = on ? "" : "";
+ document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+ }
+ });
+</script>
+<div class="page-wrapper">
+ <div class="flex-between mb-2">
+ <h1 class="page-title"> İstasyonlar <small th:text="${stations.size()} + ' istasyon'"></small></h1>
+ <a th:href="@{/ui/stations/map}" class="btn btn-primary"> Haritada Gör</a>
+ </div>
+
+ <div class="card" th:if="${stations.isEmpty()}">
+ <p class="text-center text-muted" style="padding:2rem;">Henüz istasyon eklenmemiş.</p>
+ </div>
+
+ <div th:unless="${stations.isEmpty()}">
+ <div th:each="station : ${stations}" class="card" style="cursor:default;">
+ <div class="card-header">
+ <span class="card-title">
+ <span th:if="${station.status.name() == 'AVAILABLE'}"><span class="dot dot-green"></span></span>
+ <span th:if="${station.status.name() == 'OCCUPIED'}"><span class="dot dot-yellow"></span></span>
+ <span th:if="${station.status.name() == 'OFFLINE'}"><span class="dot dot-red"></span></span>
+ <span th:text="${station.name}"></span>
+ </span>
+ <div class="flex gap-1">
+ <span class="badge"
+ th:classappend="${station.status.name() == 'AVAILABLE'} ? 'badge-green' : (${station.status.name() == 'OCCUPIED'} ? 'badge-yellow' : 'badge-red')"
+ th:text="${station.status}"></span>
+ <a th:href="@{/ui/stations/{id}(id=${station.id})}" class="btn btn-outline btn-sm">Detay →</a>
+ </div>
+ </div>
+ <p class="text-muted" style="font-size:0.88rem;"> <span th:text="${station.address}"></span></p>
+ <p class="text-muted mt-1" style="font-size:0.82rem;">
+ Koordinat: <code th:text="${station.latitude} + ', ' + ${station.longitude}"></code>
+ </p>
+ <div class="flex gap-1 mt-2">
+ <a th:href="@{/ui/stations/{id}(id=${station.id})}" class="btn btn-outline btn-sm">Chargerları Gör</a>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary btn-sm">Rezervasyon Yap</a>
+ </div>
+ </div>
+ </div>
+</div>
+<footer>EV Charging System &copy; 2026</footer>
+</body>
+</html>
