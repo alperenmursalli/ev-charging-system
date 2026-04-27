@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title>Şarjı Bitir – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<nav class="navbar">
+ <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
+ <div class="navbar-links">
+ <a th:href="@{/ui/home}">Ana Sayfa</a>
+ <a th:href="@{/ui/vehicles}">Araçlar</a>
+ <a th:href="@{/ui/stations}">İstasyonlar</a>
+ <a th:href="@{/ui/stations/map}"> Harita</a>
+ <a th:href="@{/ui/reservations}">Rezervasyonlar</a>
+ <a th:href="@{/ui/sessions/start}" class="active">Şarj Et</a>
+ <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
+ <span id="darkIcon"></span>
+ <span class="toggle-label" id="darkLabel">Dark</span>
+ </button>
+ </div>
+</nav>
+<script>
+ (function(){
+ var d = localStorage.getItem("evDark");
+ if(d === "1") { document.body.classList.add("dark"); }
+ })();
+ function toggleDark() {
+ var on = document.body.classList.toggle("dark");
+ localStorage.setItem("evDark", on ? "1" : "0");
+ document.getElementById("darkIcon").textContent = on ? "" : "";
+ document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+ }
+ window.addEventListener("DOMContentLoaded", function(){
+ var on = document.body.classList.contains("dark");
+ var btn = document.getElementById("darkBtn");
+ if(btn){
+ document.getElementById("darkIcon").textContent = on ? "" : "";
+ document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+ }
+ });
+</script>
+<div class="page-wrapper">
+ <div style="max-width:520px;margin:0 auto;">
+ <div class="flex-between mb-2">
+ <h1 class="page-title"> Şarjı Bitir</h1>
+ </div>
+
+ <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
+
+ <!-- Aktif session özeti -->
+ <div class="card" th:if="${session}">
+ <div class="card-header">
+ <span class="card-title"> Aktif Oturum</span>
+ <span class="badge badge-yellow"> Aktif</span>
+ </div>
+ <div class="grid-2" style="font-size:0.9rem;">
+ <div>
+ <p class="text-muted" style="font-size:0.78rem;">OTURUM ID</p>
+ <p><strong>#<span th:text="${session.id}"></span></strong></p>
+ </div>
+ <div>
+ <p class="text-muted" style="font-size:0.78rem;">BAŞLANGIÇ BATARYASİ</p>
+ <p><strong th:text="${session.startBatteryLevel} + '%'"></strong></p>
+ </div>
+ <div>
+ <p class="text-muted" style="font-size:0.78rem;">BAŞLANGIÇ</p>
+ <p th:text="${#temporals.format(session.startedAt, 'HH:mm:ss')}"></p>
+ </div>
+ <div>
+ <p class="text-muted" style="font-size:0.78rem;">CHARGER</p>
+ <p>#<span th:text="${session.chargerId}"></span></p>
+ </div>
+ </div>
+
+ <div style="margin-top:1rem;">
+ <p class="text-muted" style="font-size:0.78rem;margin-bottom:0.3rem;">MEVCUT BATARYA (tahmini)</p>
+ <div class="battery-bar">
+ <div class="battery-fill" th:style="'width:' + ${session.startBatteryLevel} + '%'"></div>
+ </div>
+ <p style="font-size:0.82rem;" th:text="${session.startBatteryLevel} + '% başlangıç'"></p>
+ </div>
+ </div>
+
+ <!-- Bitiş formu -->
+ <div class="card">
+ <form th:action="@{/ui/sessions/{id}/end(id=${session.id})}" method="post">
+ <div class="form-group">
+ <label class="form-label">Bitiş Batarya Seviyesi (%) *</label>
+ <input type="number" name="endBatteryLevel" class="form-control" required
+ th:min="${session.startBatteryLevel}" max="100" step="0.1"
+ placeholder="Şu anki batarya yüzdesi"/>
+ <div class="form-hint">
+ Başlangıçtan (<span th:text="${session.startBatteryLevel}"></span>%) yüksek olmalı
+ </div>
+ </div>
+
+ <div class="flex gap-1 mt-2">
+ <button type="submit" class="btn btn-danger"> Şarjı Bitir ve Maliyet Hesapla</button>
+ </div>
+ </form>
+ </div>
+ </div>
+</div>
+<footer>EV Charging System &copy; 2026</footer>
+</body>
+</html>
