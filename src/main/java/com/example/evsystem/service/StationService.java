@@ -1,6 +1,8 @@
 package com.example.evsystem.service;
 
 import com.example.evsystem.dto.StationDiscoveryResponse;
+import com.example.evsystem.dto.StationRequest;
+import com.example.evsystem.dto.StationUpdateRequest;
 import com.example.evsystem.entity.Station;
 import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.PowerOutput;
@@ -24,13 +26,20 @@ public class StationService {
         this.stationRepository = stationRepository;
     }
 
-    public Station save(Station station) {
-        if (station.getName() == null || station.getName().isBlank()) {
+    public Station save(StationRequest request) {
+        if (request.getName() == null || request.getName().isBlank()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Station name cannot be empty");
         }
-        if (stationRepository.existsByNameIgnoreCase(station.getName())) {
+        if (stationRepository.existsByNameIgnoreCase(request.getName().trim())) {
             throw new BusinessException(HttpStatus.CONFLICT, "Station with this name already exists");
         }
+
+        Station station = new Station();
+        station.setName(request.getName().trim());
+        station.setAddress(request.getAddress().trim());
+        station.setLatitude(request.getLatitude());
+        station.setLongitude(request.getLongitude());
+        station.setStatus(request.getStatus());
         return stationRepository.save(station);
     }
 
@@ -64,7 +73,7 @@ public class StationService {
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Station not found with id: " + id));
     }
 
-    public Station update(Long id, Station updated) {
+    public Station update(Long id, StationUpdateRequest updated) {
         Station station = getById(id);
         if (updated.getName() != null) {
             if (updated.getName().isBlank()) {
@@ -75,9 +84,14 @@ public class StationService {
                     .ifPresent(existing -> {
                         throw new BusinessException(HttpStatus.CONFLICT, "Station with this name already exists");
                     });
-            station.setName(updated.getName());
+            station.setName(updated.getName().trim());
         }
-        if (updated.getAddress() != null) station.setAddress(updated.getAddress());
+        if (updated.getAddress() != null) {
+            if (updated.getAddress().isBlank()) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "Address cannot be empty");
+            }
+            station.setAddress(updated.getAddress().trim());
+        }
         if (updated.getLatitude() != null) station.setLatitude(updated.getLatitude());
         if (updated.getLongitude() != null) station.setLongitude(updated.getLongitude());
         if (updated.getStatus() != null) station.setStatus(updated.getStatus());

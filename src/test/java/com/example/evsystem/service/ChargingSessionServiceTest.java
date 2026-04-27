@@ -114,9 +114,9 @@ class ChargingSessionServiceTest {
 
         chargingSessionService.autoCompleteExpiredSessions();
 
-        assertEquals(64f, session.getConsumedKwh());
-        assertEquals(100f, session.getEndBatteryLevel());
-        assertEquals(640f, session.getTotalCost());
+        assertEquals(44f, session.getConsumedKwh());
+        assertEquals(75f, session.getEndBatteryLevel());
+        assertEquals(440f, session.getTotalCost());
         assertEquals(ChargingSessionStatus.COMPLETED, session.getStatus());
         verify(reservationService).markCompleted(any());
     }
@@ -150,6 +150,9 @@ class ChargingSessionServiceTest {
         verify(chargingSessionRepository).save(any(ChargingSession.class));
         verify(charger).setStatus(ChargerStatus.OCCUPIED);
         verify(reservationService).markInProgress(15L);
+        org.mockito.ArgumentCaptor<ChargingSession> captor = org.mockito.ArgumentCaptor.forClass(ChargingSession.class);
+        verify(chargingSessionRepository).save(captor.capture());
+        assertEquals(20f, captor.getValue().getStartBatteryLevel());
     }
 
     @Test
@@ -190,8 +193,14 @@ class ChargingSessionServiceTest {
     }
 
     private com.example.evsystem.entity.Vehicle vehicleWithId(Long id) {
-        com.example.evsystem.entity.Vehicle vehicle = mock(com.example.evsystem.entity.Vehicle.class);
-        when(vehicle.getId()).thenReturn(id);
+        com.example.evsystem.entity.Vehicle vehicle = new com.example.evsystem.entity.Vehicle();
+        try {
+            java.lang.reflect.Field idField = com.example.evsystem.entity.Vehicle.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(vehicle, id);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
         return vehicle;
     }
 }

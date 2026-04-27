@@ -1,6 +1,7 @@
 package com.example.evsystem.config;
 
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class ChargingSessionSchemaInitializer {
 
     @Bean
+    @ConditionalOnProperty(name = "schema.init.charging-session-status.enabled", havingValue = "true", matchIfMissing = true)
     ApplicationRunner chargingSessionConstraintUpdater(JdbcTemplate jdbcTemplate) {
         return args -> {
             jdbcTemplate.execute("update charging_sessions set status = 'ACTIVE' where status = 'OCCUPIED'");

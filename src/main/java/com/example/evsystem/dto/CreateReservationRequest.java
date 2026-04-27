@@ -1,21 +1,31 @@
 package com.example.evsystem.dto;
 
+import com.example.evsystem.validation.ValidReservationTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDateTime;
 
+@ValidReservationTime
 public class CreateReservationRequest {
 
-    @NotNull
+    @NotNull(message = "Vehicle id is required.")
+    @Positive(message = "Vehicle id must be greater than zero.")
+    @Schema(example = "1")
     private Long vehicleId;
 
-    @NotNull
+    @NotNull(message = "Charger id is required.")
+    @Positive(message = "Charger id must be greater than zero.")
+    @Schema(example = "10")
     private Long chargerId;
 
-    @NotNull
+    @NotNull(message = "Reservation start time is required.")
+    @Schema(example = "2026-04-28T10:00:00")
     private LocalDateTime startTime;
 
-    @NotNull
+    @NotNull(message = "Reservation end time is required.")
+    @Schema(example = "2026-04-28T11:30:00")
     private LocalDateTime endTime;
 
     public Long getVehicleId() {

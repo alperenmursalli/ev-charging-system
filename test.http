@@ -101,7 +101,7 @@ Content-Type: application/json
   "connectorType": "CCS",
   "pricePerKwh": 4.0,
   "status": "AVAILABLE",
-  "station": { "id": 1 }
+  "stationId": 1
 }
 
 ###
@@ -118,7 +118,7 @@ Content-Type: application/json
   "connectorType": "TYPE2",
   "pricePerKwh": 3.0,
   "status": "AVAILABLE",
-  "station": { "id": 2 }
+  "stationId": 2
 }
 
 ###
@@ -132,7 +132,7 @@ Content-Type: application/json
   "connectorType": "CHADEMO",
   "pricePerKwh": 5.0,
   "status": "OFFLINE",
-  "station": { "id": 3 }
+  "stationId": 3
 }
 
 ###
@@ -172,14 +172,14 @@ Content-Type: application/json
 }
 
 ###
-POST http://localhost:8081/reservations
+POST {{baseUrl}}/reservations
 Content-Type: application/json
 
 {
   "vehicleId": 1,
   "chargerId": 1,
-  "startTime": "2026-04-25T14:00:00",
-  "endTime": "2026-04-25T16:00:00"
+  "startTime": "2026-04-28T14:00:00",
+  "endTime": "2026-04-28T16:00:00"
 }
 
 ###
@@ -189,8 +189,8 @@ Content-Type: application/json
 {
   "vehicleId": 1,
   "chargerId": 1,
-  "startTime": "2026-04-25T12:37:00",
-  "endTime": "2026-04-25T12:39:00"
+  "startTime": "2026-04-28T12:37:00",
+  "endTime": "2026-04-28T12:39:00"
 }
 
 > {%
