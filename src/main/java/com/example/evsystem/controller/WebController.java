@@ -3,8 +3,10 @@ package com.example.evsystem.controller;
 import com.example.evsystem.dto.ChargingSessionResponse;
 import com.example.evsystem.dto.CreateReservationRequest;
 import com.example.evsystem.dto.ReservationResponse;
-import com.example.evsystem.entity.Vehicle;
+import com.example.evsystem.dto.VehicleRequest;
 import com.example.evsystem.enums.ConnectorType;
+import com.example.evsystem.enums.PowerOutput;
+import com.example.evsystem.enums.StationStatus;
 import com.example.evsystem.service.ChargerService;
 import com.example.evsystem.service.ChargingSessionService;
 import com.example.evsystem.service.ReservationService;
@@ -57,13 +59,13 @@ public class WebController {
 
     @GetMapping("/vehicles/add")
     public String addVehicleForm(Model model) {
-        model.addAttribute("vehicle", new Vehicle());
+        model.addAttribute("vehicle", new VehicleRequest());
         model.addAttribute("connectorTypes", ConnectorType.values());
         return "vehicles/add";
     }
 
     @PostMapping("/vehicles/add")
-    public String addVehicle(@Valid @ModelAttribute("vehicle") Vehicle vehicle,
+    public String addVehicle(@Valid @ModelAttribute("vehicle") VehicleRequest vehicle,
                              BindingResult result,
                              Model model,
                              RedirectAttributes redirectAttrs) {
@@ -97,7 +99,10 @@ public class WebController {
     }
 
     @GetMapping("/stations/map")
-    public String stationMap() {
+    public String stationMap(Model model) {
+        model.addAttribute("connectorTypes", ConnectorType.values());
+        model.addAttribute("powerOutputs", PowerOutput.values());
+        model.addAttribute("stationStatuses", StationStatus.values());
         return "stations/map";
     }
 

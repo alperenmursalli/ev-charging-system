@@ -1,372 +1,241 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
- <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width,initial-scale=1"/>
  <title>İstasyon Haritası – EV Charging</title>
  <link rel="stylesheet" th:href="@{/css/style.css}"/>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+ <meta name="google-maps-api-key" th:content="${@environment.getProperty('google.maps.api-key', '')}"/>
+ <meta name="google-maps-map-id" th:content="${@environment.getProperty('google.maps.map-id', '')}"/>
  <style>
  body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
- .map-layout { display:flex; flex:1; overflow:hidden; }
- #sidebar {
- width: 340px;
- min-width: 300px;
+ .map-page { display:flex; flex:1; min-height:0; }
+ .map-sidebar {
+ width: 380px;
+ min-width: 340px;
  background: var(--card-bg);
  border-right: 1px solid var(--border);
  overflow-y: auto;
  display: flex;
  flex-direction: column;
- color: var(--text);
  }
- #sidebar-header {
+ .map-sidebar-header {
  padding: 1rem;
  border-bottom: 1px solid var(--border);
  background: var(--table-head);
  }
- #sidebar-header h2 { font-size:1rem; font-weight:700; margin-bottom:0.5rem; color: var(--text); }
- #station-list { flex:1; overflow-y:auto; }
+ .map-sidebar-header h1 { font-size:1rem; margin-bottom:0.35rem; }
+ .map-sidebar-header p { color: var(--text-muted); font-size:0.82rem; }
+ .map-filters { padding: 1rem; border-bottom: 1px solid var(--border); }
+ .filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+ .filter-actions { display:flex; gap:0.6rem; margin-top:0.8rem; }
+ .legend { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.8rem; }
+ .legend-item { display:flex; align-items:center; gap:0.3rem; font-size:0.75rem; color:var(--text-muted); }
+ .station-list { flex:1; overflow-y:auto; }
  .station-item {
- padding: 0.9rem 1rem;
+ padding: 0.95rem 1rem;
  border-bottom: 1px solid var(--border);
  cursor: pointer;
- transition: background 0.15s;
- color: var(--text);
+ transition: background 0.15s ease;
  }
  .station-item:hover { background: var(--input-bg); }
  .station-item.selected { background: #dbeafe; }
  body.dark .station-item.selected { background: #1e3a5f; }
- .station-name { font-weight:600; font-size:0.9rem; margin-bottom:0.2rem; }
- .station-addr { font-size:0.78rem; color: var(--text-muted); margin-bottom:0.3rem; }
- .station-meta { display:flex; gap:0.5rem; flex-wrap:wrap; }
- #map-container { flex:1; position:relative; }
+ .station-name { font-weight:700; font-size:0.92rem; margin-bottom:0.2rem; display:flex; align-items:center; gap:0.4rem; }
+ .station-address { font-size:0.78rem; color: var(--text-muted); margin-bottom:0.45rem; }
+ .station-meta { display:flex; gap:0.4rem; flex-wrap:wrap; }
+ .sidebar-footer { padding:0.85rem 1rem; border-top:1px solid var(--border); display:flex; gap:0.65rem; }
+ .map-main { flex:1; position:relative; min-width:0; }
  #map { width:100%; height:100%; }
- #detail-panel {
+ .map-empty-state {
  position:absolute;
- right:12px; top:12px;
- width:300px;
- background: var(--card-bg);
- border-radius:14px;
- box-shadow: var(--shadow);
- border: 1px solid var(--border);
- padding:1.25rem;
- display:none;
- z-index:10;
- max-height:calc(100vh - 120px);
- overflow-y:auto;
- color: var(--text);
- }
- #detail-panel.visible { display:block; }
- .detail-close {
- position:absolute; top:10px; right:12px;
- background:none; border:none; font-size:1.2rem;
- cursor:pointer; color: var(--text-muted);
- }
- .charger-row {
- display:flex; align-items:center; justify-content:space-between;
- padding:0.45rem 0; border-bottom:1px solid var(--border);
- font-size:0.82rem;
- }
- .charger-row:last-child { border-bottom:none; }
- #api-key-warning {
- position:absolute; top:0; left:0; right:0; bottom:0;
+ inset:0;
  background: var(--bg);
- display:flex; align-items:center; justify-content:center;
  z-index:20;
- flex-direction:column;
- gap:1rem;
+ display:flex;
+ align-items:center;
+ justify-content:center;
  text-align:center;
  padding:2rem;
- color: var(--text);
  }
- #api-key-warning p { color: var(--text-muted); }
- #api-key-warning p:last-child { color: var(--text-muted); }
- /* sidebar footer */
- #sidebar > div:last-child {
- border-top: 1px solid var(--border) !important;
+ .map-empty-card {
+ max-width: 420px;
  background: var(--card-bg);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ padding: 1.5rem;
+ box-shadow: var(--shadow);
+ }
+ .map-empty-card p { color: var(--text-muted); margin:0.75rem 0; }
+ .map-key-row { display:flex; gap:0.6rem; margin-top:1rem; }
+ .detail-panel {
+ position:absolute;
+ top:12px;
+ right:12px;
+ width:360px;
+ max-width:calc(100% - 24px);
+ max-height:calc(100vh - 110px);
+ overflow-y:auto;
+ background: var(--card-bg);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ box-shadow: var(--shadow);
+ padding: 1.2rem;
+ z-index:10;
+ display:none;
+ }
+ .detail-panel.visible { display:block; }
+ .detail-close {
+ position:absolute;
+ top:10px;
+ right:12px;
+ border:none;
+ background:none;
+ color:var(--text-muted);
+ cursor:pointer;
+ font-size:1.1rem;
+ }
+ .detail-section { margin-top:1rem; }
+ .detail-section h3 { font-size:0.72rem; color:var(--text-muted); margin-bottom:0.5rem; letter-spacing:0.08em; text-transform:uppercase; }
+ .charger-card {
+ border: 1px solid var(--border);
+ border-radius: 12px;
+ padding: 0.8rem;
+ margin-bottom: 0.6rem;
+ background: var(--input-bg);
+ }
+ .charger-card-head { display:flex; justify-content:space-between; gap:0.5rem; margin-bottom:0.45rem; }
+ .charger-code { font-weight:700; font-size:0.85rem; }
+ .charger-meta { display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.6rem; }
+ .charger-actions { display:flex; gap:0.5rem; }
+ .inline-status { min-height: 22px; font-size:0.78rem; color:var(--text-muted); margin-top:0.5rem; }
+ @media (max-width: 960px) {
+  body { height:auto; overflow:auto; }
+  .map-page { flex-direction:column; height:auto; }
+  .map-sidebar { width:100%; min-width:0; border-right:none; border-bottom:1px solid var(--border); }
+  .map-main { min-height:60vh; }
+  .filter-grid { grid-template-columns:1fr; }
  }
  </style>
 </head>
 <body>
 <nav class="navbar">
- <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
+ <a href="/ui/home" class="navbar-brand"><span>EV</span>Charge</a>
  <div class="navbar-links">
- <a th:href="@{/ui/home}">Ana Sayfa</a>
- <a th:href="@{/ui/vehicles}">Araçlar</a>
- <a th:href="@{/ui/stations}" class="active">İstasyonlar</a>
- <a th:href="@{/ui/stations/map}" class="active"> Harita</a>
- <a th:href="@{/ui/reservations}">Rezervasyonlar</a>
- <a th:href="@{/ui/sessions/start}">Şarj Et</a>
- <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
- <span id="darkIcon"></span>
- <span class="toggle-label" id="darkLabel">Dark</span>
- </button>
+  <a th:href="@{/ui/home}">Ana Sayfa</a>
+  <a th:href="@{/ui/vehicles}">Araçlar</a>
+  <a th:href="@{/ui/stations}" class="active">İstasyonlar</a>
+  <a th:href="@{/ui/stations/map}" class="active">Harita</a>
+  <a th:href="@{/ui/reservations}">Rezervasyonlar</a>
+  <a th:href="@{/ui/sessions/start}">Şarj Et</a>
+  <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
+   <span id="darkIcon"></span>
+   <span class="toggle-label" id="darkLabel">Dark</span>
+  </button>
  </div>
 </nav>
+
 <script>
- (function(){
- var d = localStorage.getItem("evDark");
- if(d === "1") { document.body.classList.add("dark"); }
+ (function () {
+   var d = localStorage.getItem("evDark");
+   if (d === "1") {
+     document.body.classList.add("dark");
+   }
  })();
  function toggleDark() {
- var on = document.body.classList.toggle("dark");
- localStorage.setItem("evDark", on ? "1" : "0");
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
+   var on = document.body.classList.toggle("dark");
+   localStorage.setItem("evDark", on ? "1" : "0");
+   document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
  }
- window.addEventListener("DOMContentLoaded", function(){
- var on = document.body.classList.contains("dark");
- var btn = document.getElementById("darkBtn");
- if(btn){
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
+ window.addEventListener("DOMContentLoaded", function () {
+   var on = document.body.classList.contains("dark");
+   document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
  });
 </script>
 
-<div class="map-layout">
- <!-- Sol panel -->
- <div id="sidebar">
- <div id="sidebar-header">
- <h2> Şarj İstasyonları</h2>
- <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
- <span style="font-size:0.75rem;display:flex;align-items:center;gap:3px;"><span class="dot dot-green"></span>Müsait</span>
- <span style="font-size:0.75rem;display:flex;align-items:center;gap:3px;"><span class="dot dot-yellow"></span>Dolu</span>
- <span style="font-size:0.75rem;display:flex;align-items:center;gap:3px;"><span class="dot dot-red"></span>Offline</span>
- </div>
- </div>
- <div id="station-list">
- <div class="text-muted" style="padding:1rem;text-align:center;font-size:0.85rem;">İstasyonlar yükleniyor...</div>
- </div>
- <div style="padding:0.75rem;border-top:1px solid #e2e8f0;">
- <button id="btn-locate" class="btn btn-outline" style="width:100%;font-size:0.85rem;"> Konumumu Bul</button>
- </div>
- </div>
+<div class="map-page">
+ <aside class="map-sidebar">
+  <div class="map-sidebar-header">
+   <h1>İstasyon Haritası</h1>
+   <p>Discovery endpoint'i ile filtreleyin, haritadan istasyon seçin, rota alın.</p>
+   <div class="legend">
+    <span class="legend-item"><span class="dot dot-green"></span>Müsait</span>
+    <span class="legend-item"><span class="dot dot-yellow"></span>Dolu</span>
+    <span class="legend-item"><span class="dot dot-red"></span>Offline</span>
+   </div>
+  </div>
 
- <!-- Harita -->
- <div id="map-container">
- <!-- API key uyarısı -->
- <div id="api-key-warning">
- <div style="font-size:3rem;"></div>
- <h3>Google Maps API Key Gerekli</h3>
- <p style="color:#64748b;max-width:360px;font-size:0.9rem;">
- Haritayı görmek için aşağıdaki alana Google Maps API anahtarınızı girin.
- API key'i <code>application.properties</code> dosyasına da
- <code>google.maps.api-key=BURAYA_KEY</code> şeklinde ekleyebilirsiniz.
- </p>
- <div style="display:flex;gap:0.5rem;width:100%;max-width:400px;">
- <input id="api-key-input" type="text" class="form-control" placeholder="Google Maps API Key..."/>
- <button class="btn btn-primary" onclick="initMapWithKey()">Uygula</button>
- </div>
- <p style="font-size:0.78rem;color:#94a3b8;">
- Geliştirme ortamı için: Google Cloud Console → Maps JavaScript API → Enable → Credentials → API Key
- </p>
- </div>
- <div id="map"></div>
+  <form id="discovery-form" class="map-filters">
+   <div class="filter-grid">
+    <div class="form-group">
+     <label class="form-label" for="connectorType">Konnektör</label>
+     <select id="connectorType" name="connectorType" class="form-control">
+      <option value="">Tümü</option>
+      <option th:each="type : ${connectorTypes}" th:value="${type}" th:text="${type}"></option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="powerOutput">Güç</label>
+     <select id="powerOutput" name="powerOutput" class="form-control">
+      <option value="">Tümü</option>
+      <option th:each="power : ${powerOutputs}" th:value="${power}" th:text="${power}"></option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="status">Durum</label>
+     <select id="status" name="status" class="form-control">
+      <option value="">Tümü</option>
+      <option th:each="stationStatus : ${stationStatuses}" th:value="${stationStatus}" th:text="${stationStatus}"></option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="maxPricePerKwh">Maks. fiyat/kWh</label>
+     <input id="maxPricePerKwh" name="maxPricePerKwh" type="number" min="0" step="0.1" class="form-control" placeholder="12.5"/>
+    </div>
+   </div>
+   <div class="filter-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Filtrele</button>
+    <button type="button" class="btn btn-outline btn-sm" id="reset-filters">Sıfırla</button>
+   </div>
+   <div class="inline-status" id="filter-status"></div>
+  </form>
 
- <!-- Detay paneli -->
- <div id="detail-panel">
- <button class="detail-close" onclick="closeDetail()"></button>
- <div id="detail-content"></div>
- </div>
- </div>
+  <div class="station-list" id="station-list">
+   <div class="text-muted" style="padding:1rem;text-align:center;">İstasyonlar yükleniyor...</div>
+  </div>
+
+  <div class="sidebar-footer">
+   <button id="btn-locate" class="btn btn-outline btn-sm" style="flex:1;">Konumumu Bul</button>
+   <button id="clear-route" class="btn btn-outline btn-sm" type="button">Rotayı Temizle</button>
+  </div>
+ </aside>
+
+ <main class="map-main">
+  <div class="map-empty-state" id="map-empty-state">
+   <div class="map-empty-card">
+    <h2>Google Maps API Key gerekli</h2>
+    <p>Key'i `application-local.properties` içine `google.maps.api-key=...` olarak ekleyebilir veya geçici olarak aşağıya yapıştırabilirsiniz.</p>
+    <div class="map-key-row">
+      <input id="api-key-input" type="text" class="form-control" placeholder="Google Maps API Key"/>
+      <button id="apply-api-key" class="btn btn-primary btn-sm" type="button">Yükle</button>
+    </div>
+   </div>
+  </div>
+  <div id="map"></div>
+  <section class="detail-panel" id="detail-panel">
+   <button class="detail-close" id="detail-close" type="button">×</button>
+   <div id="detail-content"></div>
+  </section>
+ </main>
 </div>
 
-<script>
- let map, markers = [], stationsData = [], userMarker = null, directionsService, directionsRenderer;
- let googleMapsLoaded = false;
- let GOOGLE_MAPS_KEY = '';
-
- // İstasyonları backend'den çek
- async function loadStations(userLat, userLng) {
- let url = '/stations/discovery';
- if (userLat && userLng) url += `?userLatitude=${userLat}&userLongitude=${userLng}`;
- try {
- const res = await fetch(url);
- stationsData = await res.json();
- renderSidebar();
- if (googleMapsLoaded) renderMarkers();
- } catch(e) {
- console.error('Station load error:', e);
- }
- }
-
- function renderSidebar() {
- const list = document.getElementById('station-list');
- if (!stationsData.length) {
- list.innerHTML = '<div style="padding:1rem;text-align:center;" class="text-muted">İstasyon bulunamadı.</div>';
- return;
- }
- list.innerHTML = stationsData.map((s, i) => {
- const dotClass = s.status === 'AVAILABLE' ? 'dot-green' : s.status === 'OCCUPIED' ? 'dot-yellow' : 'dot-red';
- const badgeClass = s.status === 'AVAILABLE' ? 'badge-green' : s.status === 'OCCUPIED' ? 'badge-yellow' : 'badge-red';
- const dist = s.distanceKm != null ? `<span class="badge badge-gray">${s.distanceKm} km</span>` : '';
- return `<div class="station-item" onclick="focusStation(${i})" id="sitem-${i}">
- <div class="station-name"><span class="dot ${dotClass}"></span>${s.name}</div>
- <div class="station-addr"> ${s.address}</div>
- <div class="station-meta">
- <span class="badge ${badgeClass}">${s.status}</span>
- <span class="badge badge-blue">${s.availableChargerCount}/${s.totalChargerCount} müsait</span>
- ${dist}
- ${s.minPricePerKwh != null ? `<span class="badge badge-gray">₺${s.minPricePerKwh}/kWh'den</span>` : ''}
- </div>
- </div>`;
- }).join('');
- }
-
- function initMapWithKey() {
- const input = document.getElementById('api-key-input');
- GOOGLE_MAPS_KEY = input.value.trim();
- if (!GOOGLE_MAPS_KEY) return alert('Lütfen bir API key girin.');
- document.getElementById('api-key-warning').style.display = 'none';
- loadGoogleMaps(GOOGLE_MAPS_KEY);
- }
-
- // application.properties'den key gelirse otomatik yükle
- const serverKey = /*[[${@environment.getProperty('google.maps.api-key')}]]*/ '';
- if (serverKey && serverKey !== 'YOUR_API_KEY_HERE' && serverKey.length > 10) {
- document.getElementById('api-key-warning').style.display = 'none';
- loadGoogleMaps(serverKey);
- }
-
- function loadGoogleMaps(key) {
- const script = document.createElement('script');
- script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=initMap`;
- script.async = true;
- document.head.appendChild(script);
- }
-
- window.initMap = function() {
- googleMapsLoaded = true;
- const center = { lat: 38.4237, lng: 27.1428 }; // İzmir
- map = new google.maps.Map(document.getElementById('map'), {
- zoom: 12,
- center,
- mapTypeControl: false,
- streetViewControl: false,
- fullscreenControl: false,
- });
- directionsService = new google.maps.DirectionsService();
- directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: false });
- directionsRenderer.setMap(map);
- renderMarkers();
- };
-
- function renderMarkers() {
- markers.forEach(m => m.setMap(null));
- markers = [];
- stationsData.forEach((s, i) => {
- const color = s.status === 'AVAILABLE' ? '#22c55e' : s.status === 'OCCUPIED' ? '#eab308' : '#ef4444';
- const marker = new google.maps.Marker({
- position: { lat: s.latitude, lng: s.longitude },
- map,
- title: s.name,
- icon: {
- path: google.maps.SymbolPath.CIRCLE,
- scale: 12,
- fillColor: color,
- fillOpacity: 1,
- strokeColor: '#fff',
- strokeWeight: 2.5,
- }
- });
- marker.addListener('click', () => showDetail(i));
- markers.push(marker);
- });
- }
-
- function focusStation(i) {
- document.querySelectorAll('.station-item').forEach(el => el.classList.remove('selected'));
- const el = document.getElementById(`sitem-${i}`);
- if (el) { el.classList.add('selected'); el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
- if (googleMapsLoaded && markers[i]) {
- map.panTo(markers[i].getPosition());
- map.setZoom(15);
- }
- showDetail(i);
- }
-
- function showDetail(i) {
- const s = stationsData[i];
- const badgeClass = s.status === 'AVAILABLE' ? 'badge-green' : s.status === 'OCCUPIED' ? 'badge-yellow' : 'badge-red';
- const chargerRows = (s.connectorTypes || []).map((ct, j) => {
- const pw = s.powerOutputs && s.powerOutputs[j] ? s.powerOutputs[j] : '–';
- return `<div class="charger-row">
- <span class="badge badge-gray">${ct}</span>
- <span>${pw}</span>
- </div>`;
- }).join('');
-
- document.getElementById('detail-content').innerHTML = `
- <h3 style="margin-bottom:0.5rem;font-size:1rem;padding-right:1.5rem;">${s.name}</h3>
- <p class="text-muted" style="font-size:0.8rem;margin-bottom:0.75rem;">${s.address}</p>
- <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.75rem;">
- <span class="badge ${badgeClass}">${s.status}</span>
- <span class="badge badge-blue">${s.availableChargerCount}/${s.totalChargerCount} müsait</span>
- ${s.distanceKm != null ? `<span class="badge badge-gray">${s.distanceKm} km</span>` : ''}
- ${s.minPricePerKwh != null ? `<span class="badge badge-gray">₺${s.minPricePerKwh}+/kWh</span>` : ''}
- </div>
- ${chargerRows ? `<div style="margin-bottom:0.75rem;"><p class="text-muted" style="font-size:0.75rem;font-weight:600;margin-bottom:0.3rem;">KONNEKTÖRLER</p>${chargerRows}</div>` : ''}
- <div style="display:flex;flex-direction:column;gap:0.4rem;">
- <a href="/ui/stations/${s.id}" class="btn btn-outline btn-sm">İstasyon Detayı</a>
- <a href="/ui/reservations/create?chargerId=" class="btn btn-primary btn-sm">Rezervasyon Yap</a>
- <button onclick="getDirections(${s.latitude},${s.longitude})" class="btn btn-outline btn-sm" id="dir-btn-${i}">Yol Tarifi Al</button>
- <a href="https://maps.google.com/?q=${s.latitude},${s.longitude}" target="_blank" class="btn btn-outline btn-sm">Google Maps'te Aç</a>
- </div>
- `;
- document.getElementById('detail-panel').classList.add('visible');
- }
-
- function closeDetail() {
- document.getElementById('detail-panel').classList.remove('visible');
- directionsRenderer.setDirections({ routes: [] });
- }
-
- function getDirections(destLat, destLng) {
- if (!userMarker) {
- alert('Önce "Konumumu Bul" butonuna basın.');
- return;
- }
- const origin = userMarker.getPosition();
- directionsService.route({
- origin,
- destination: { lat: destLat, lng: destLng },
- travelMode: google.maps.TravelMode.DRIVING
- }, (result, status) => {
- if (status === 'OK') directionsRenderer.setDirections(result);
- else alert('Yol tarifi alınamadı: ' + status);
- });
- }
-
- // Kullanıcı konumu
- document.getElementById('btn-locate').addEventListener('click', () => {
- if (!navigator.geolocation) return alert('Tarayıcınız konuma erişime izin vermiyor.');
- navigator.geolocation.getCurrentPosition(pos => {
- const lat = pos.coords.latitude, lng = pos.coords.longitude;
- loadStations(lat, lng);
- if (googleMapsLoaded) {
- map.panTo({ lat, lng });
- map.setZoom(13);
- if (userMarker) userMarker.setMap(null);
- userMarker = new google.maps.Marker({
- position: { lat, lng },
- map,
- title: 'Konumunuz',
- icon: {
- path: google.maps.SymbolPath.CIRCLE,
- scale: 9,
- fillColor: '#2563eb',
- fillOpacity: 1,
- strokeColor: '#fff',
- strokeWeight: 3,
- }
- });
- }
- }, () => alert('Konum alınamadı.'));
- });
-
- // Sayfa yüklenince istasyonları çek
- loadStations();
+<script th:inline="javascript">
+  window.stationMapBootstrap = {
+    apiKey: /*[[${@environment.getProperty('google.maps.api-key', '')}]]*/ '',
+    mapId: /*[[${@environment.getProperty('google.maps.map-id', '')}]]*/ ''
+  };
 </script>
+<script defer th:src="@{/js/station-map.js}"></script>
 </body>
 </html>
