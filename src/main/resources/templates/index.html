@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title th:text="#{page.home.title} + ' – EV Charging'">Home – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('home')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+
+ <div class="hero">
+ <h1 th:text="#{home.hero.title}">EV Charging System</h1>
+ <p th:text="#{home.hero.subtitle}">Charge your EV with ease.</p>
+ <div class="hero-actions">
+ <a th:href="@{/ui/vehicles/add}" class="btn btn-primary btn-lg" th:text="#{home.hero.addVehicle}">+ Add Vehicle</a>
+ <a th:href="@{/ui/stations/map}" class="btn btn-outline btn-lg" style="color:#fff;border-color:#fff;" th:text="#{home.hero.openMap}">Open Map</a>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header">
+ <span class="card-title" th:text="#{home.flow.title}">Demo Flow</span>
+ <span class="text-muted" style="font-size:0.85rem;" th:text="#{home.flow.subtitle}">Step by step charging flow</span>
+ </div>
+ <div class="steps">
+ <a th:href="@{/ui/vehicles/add}" class="step">
+ <div class="step-num">1</div>
+ <div class="step-label" th:text="#{home.step1.title}">Add Vehicle</div>
+ <div class="step-desc" th:text="#{home.step1.desc}">Plate, brand, battery and connector</div>
+ </a>
+ <a th:href="@{/ui/stations/map}" class="step">
+ <div class="step-num">2</div>
+ <div class="step-label" th:text="#{home.step2.title}">Choose Station</div>
+ <div class="step-desc" th:text="#{home.step2.desc}">Find the nearest available station on the map</div>
+ </a>
+ <a th:href="@{/ui/stations}" class="step">
+ <div class="step-num">3</div>
+ <div class="step-label" th:text="#{home.step3.title}">Choose Charger</div>
+ <div class="step-desc" th:text="#{home.step3.desc}">Pick a compatible connector and power output</div>
+ </a>
+ <a th:href="@{/ui/reservations/create}" class="step">
+ <div class="step-num">4</div>
+ <div class="step-label" th:text="#{home.step4.title}">Reservation</div>
+ <div class="step-desc" th:text="#{home.step4.desc}">Set a time slot and validate compatibility</div>
+ </a>
+ <a th:href="@{/ui/sessions/start}" class="step">
+ <div class="step-num">5</div>
+ <div class="step-label" th:text="#{home.step5.title}">Start Charging</div>
+ <div class="step-desc" th:text="#{home.step5.desc}">Start the session and enter battery level</div>
+ </a>
+ <a th:href="@{/ui/sessions/start}" class="step">
+ <div class="step-num">6</div>
+ <div class="step-label" th:text="#{home.step6.title}">View Cost</div>
+ <div class="step-desc" th:text="#{home.step6.desc}">Review kWh, unit price and total cost</div>
+ </a>
+ </div>
+ </div>
+
+ <div class="grid-2">
+ <div class="card">
+ <div class="card-header"><span class="card-title" th:text="#{nav.vehicles}">Vehicles</span></div>
+ <p class="text-muted" style="font-size:0.9rem;margin-bottom:1rem;" th:text="#{home.vehicles.desc}">Manage your saved vehicles.</p>
+ <div class="flex gap-1">
+ <a th:href="@{/ui/vehicles}" class="btn btn-outline btn-sm" th:text="#{common.list}">List</a>
+ <a th:href="@{/ui/vehicles/add}" class="btn btn-primary btn-sm" th:text="#{common.add}">+ Add</a>
+ </div>
+ </div>
+ <div class="card">
+ <div class="card-header"><span class="card-title" th:text="#{nav.stations}">Stations</span></div>
+ <p class="text-muted" style="font-size:0.9rem;margin-bottom:1rem;" th:text="#{home.stations.desc}">Browse all charging stations.</p>
+ <div class="flex gap-1">
+ <a th:href="@{/ui/stations}" class="btn btn-outline btn-sm" th:text="#{common.list}">List</a>
+ <a th:href="@{/ui/stations/map}" class="btn btn-primary btn-sm" th:text="#{nav.map}">Map</a>
+ </div>
+ </div>
+ <div class="card">
+ <div class="card-header"><span class="card-title" th:text="#{nav.reservations}">Reservations</span></div>
+ <p class="text-muted" style="font-size:0.9rem;margin-bottom:1rem;" th:text="#{home.reservations.desc}">Your active and past reservations.</p>
+ <div class="flex gap-1">
+ <a th:href="@{/ui/reservations}" class="btn btn-outline btn-sm" th:text="#{common.list}">List</a>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary btn-sm" th:text="#{common.new}">+ New</a>
+ </div>
+ </div>
+ <div class="card">
+ <div class="card-header"><span class="card-title" th:text="#{home.sessions.title}">Charging Sessions</span></div>
+ <p class="text-muted" style="font-size:0.9rem;margin-bottom:1rem;" th:text="#{home.sessions.desc}">Start or end a charging session.</p>
+ <div class="flex gap-1">
+ <a th:href="@{/ui/sessions/start}" class="btn btn-primary btn-sm" th:text="#{common.start}">Start</a>
+ </div>
+ </div>
+ </div>
+
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

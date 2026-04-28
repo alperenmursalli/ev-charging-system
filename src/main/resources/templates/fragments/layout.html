@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav class="navbar" th:fragment="navbar(activePage)">
+ <a href="/ui/home" class="navbar-brand"><span>EV</span>Charge</a>
+ <div class="navbar-links">
+  <a th:href="@{/ui/home}" th:classappend="${activePage == 'home'} ? 'active'" th:text="#{nav.home}">Home</a>
+  <a th:href="@{/ui/vehicles}" th:classappend="${activePage == 'vehicles'} ? 'active'" th:text="#{nav.vehicles}">Vehicles</a>
+  <a th:href="@{/ui/stations}" th:classappend="${activePage == 'stations'} ? 'active'" th:text="#{nav.stations}">Stations</a>
+  <a th:href="@{/ui/stations/map}" th:classappend="${activePage == 'map'} ? 'active'" th:text="#{nav.map}">Map</a>
+  <a th:href="@{/ui/reservations}" th:classappend="${activePage == 'reservations'} ? 'active'" th:text="#{nav.reservations}">Reservations</a>
+  <a th:href="@{/ui/sessions/start}" th:classappend="${activePage == 'sessions'} ? 'active'" th:text="#{nav.charge}">Charge</a>
+  <div class="flex gap-1" style="align-items:center;">
+   <button class="btn btn-outline btn-sm" type="button" onclick="setLanguage('en')">EN</button>
+   <button class="btn btn-outline btn-sm" type="button" onclick="setLanguage('tr')">TR</button>
+  </div>
+  <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" th:title="#{theme.toggle.title}">
+   <span id="darkIcon"></span>
+   <span class="toggle-label" id="darkLabel">Dark</span>
+  </button>
+ </div>
+</nav>
+
+<th:block th:fragment="uiScripts">
+ <script th:inline="javascript">
+  (function () {
+    var d = localStorage.getItem("evDark");
+    if (d === "1") {
+      document.body.classList.add("dark");
+    }
+  })();
+
+  function toggleDark() {
+    var on = document.body.classList.toggle("dark");
+    localStorage.setItem("evDark", on ? "1" : "0");
+    document.getElementById("darkLabel").textContent = on ? [[#{theme.light}]] : [[#{theme.dark}]];
+  }
+
+  function setLanguage(lang) {
+    var url = new URL(window.location.href);
+    url.searchParams.set("lang", lang);
+    window.location.href = url.toString();
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    var on = document.body.classList.contains("dark");
+    var btn = document.getElementById("darkBtn");
+    if (btn) {
+      document.getElementById("darkLabel").textContent = on ? [[#{theme.light}]] : [[#{theme.dark}]];
+    }
+  });
+ </script>
+</th:block>
+
+<footer th:fragment="footer">EV Charging System &copy; 2026</footer>
+</body>
+</html>

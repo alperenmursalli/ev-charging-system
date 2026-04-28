@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="${station.name} + ' – EV Charging'">Station Detail</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('stations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div class="flex-between mb-2">
+ <h1 class="page-title" th:text="${station.name}">İstasyon Adı</h1>
+ <a th:href="@{/ui/stations}" class="btn btn-outline btn-sm" th:text="#{common.back}">← Back</a>
+ </div>
+
+ <div class="card">
+ <div class="card-header">
+ <span class="card-title" th:text="#{station.info}">Station Information</span>
+ <span class="badge"
+ th:classappend="${station.status.name() == 'AVAILABLE'} ? 'badge-green' : (${station.status.name() == 'OCCUPIED'} ? 'badge-yellow' : 'badge-red')"
+ th:text="${station.status}"></span>
+ </div>
+ <div class="grid-2">
+ <div>
+ <p class="text-muted" style="font-size:0.82rem;margin-bottom:0.25rem;" th:text="#{common.address.upper}">ADDRESS</p>
+ <p th:text="${station.address}"></p>
+ </div>
+ <div>
+ <p class="text-muted" style="font-size:0.82rem;margin-bottom:0.25rem;" th:text="#{stations.coordinate.upper}">COORDINATES</p>
+ <p><code th:text="${station.latitude} + ', ' + ${station.longitude}"></code></p>
+ </div>
+ </div>
+ <div class="mt-2">
+ <a th:href="@{'https://maps.google.com/?q=' + ${station.latitude} + ',' + ${station.longitude}}"
+ target="_blank" class="btn btn-outline btn-sm" th:text="#{station.openGoogleMaps}">Open in Google Maps</a>
+ </div>
+ </div>
+
+ <div class="card">
+ <div class="card-header">
+ <span class="card-title"><span th:text="#{station.chargers}">Chargers</span> <small th:text="#{station.chargers.count(${chargers.size()})}">(0 items)</small></span>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary btn-sm" th:text="#{stations.makeReservation}">+ Make Reservation</a>
+ </div>
+
+ <div th:if="${chargers.isEmpty()}">
+ <p class="text-muted text-center" style="padding:1.5rem;" th:text="#{station.chargers.empty}">No chargers at this station yet.</p>
+ </div>
+
+ <div class="table-wrap" th:unless="${chargers.isEmpty()}">
+ <table>
+ <thead>
+ <tr>
+ <th th:text="#{charger.code}">Code</th><th th:text="#{charger.type}">Type</th><th th:text="#{charger.power}">Power</th><th th:text="#{charger.connector}">Connector</th><th th:text="#{charger.pricePerKwh}">Price/kWh</th><th th:text="#{common.status}">Status</th><th th:text="#{common.action}">Action</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr th:each="charger : ${chargers}">
+ <td><code th:text="${charger.chargerCode}"></code></td>
+ <td><span class="badge badge-blue" th:text="${charger.chargerType}"></span></td>
+ <td th:text="${charger.powerOutput}"></td>
+ <td><span class="badge badge-gray" th:text="${charger.connectorType}"></span></td>
+ <td>
+ <strong th:text="${charger.pricePerKwh} + ' ₺'"></strong>
+ </td>
+ <td>
+ <span class="badge"
+ th:classappend="${charger.status.name() == 'AVAILABLE'} ? 'badge-green' : (${charger.status.name() == 'OCCUPIED'} ? 'badge-yellow' : 'badge-red')"
+ th:text="${charger.status}">
+ </span>
+ </td>
+ <td>
+ <a th:if="${charger.status.name() == 'AVAILABLE'}"
+ th:href="@{/ui/reservations/create(chargerId=${charger.id})}"
+ class="btn btn-primary btn-sm" th:text="#{station.reserve}">Reserve</a>
+ <span th:unless="${charger.status.name() == 'AVAILABLE'}" class="text-muted" style="font-size:0.82rem;" th:text="#{station.notAvailable}">Unavailable</span>
+ </td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

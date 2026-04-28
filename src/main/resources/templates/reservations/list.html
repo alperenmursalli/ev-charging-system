@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{nav.reservations} + ' – EV Charging'">Reservations – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('reservations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div class="flex-between mb-2">
+ <h1 class="page-title" th:text="#{nav.reservations}">Reservations</h1>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary" th:text="#{common.new} + ' ' + #{nav.reservations}">+ New Reservation</a>
+ </div>
+
+ <div class="card" th:if="${reservations.isEmpty()}">
+ <p class="text-center text-muted" style="padding:2rem;">Henüz rezervasyon yok. <a th:href="@{/ui/reservations/create}">Yeni oluştur →</a></p>
+ </div>
+
+ <div class="card" th:unless="${reservations.isEmpty()}">
+ <div class="table-wrap">
+ <table>
+ <thead>
+ <tr><th>ID</th><th>Araç</th><th>Charger</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th>İşlem</th></tr>
+ </thead>
+ <tbody>
+ <tr th:each="r : ${reservations}">
+ <td th:text="${r.id}"></td>
+ <td>Araç #<span th:text="${r.vehicleId}"></span></td>
+ <td>Charger #<span th:text="${r.chargerId}"></span></td>
+ <td th:text="${#temporals.format(r.startTime, 'dd.MM HH:mm')}"></td>
+ <td th:text="${#temporals.format(r.endTime, 'dd.MM HH:mm')}"></td>
+ <td>
+ <span class="badge"
+ th:classappend="${r.status.name() == 'ACTIVE'} ? 'badge-blue' : (${r.status.name() == 'IN_PROGRESS'} ? 'badge-yellow' : (${r.status.name() == 'COMPLETED'} ? 'badge-green' : 'badge-red'))"
+ th:text="${r.status}"></span>
+ </td>
+ <td>
+ <a th:if="${r.status.name() == 'ACTIVE' or r.status.name() == 'IN_PROGRESS'}"
+ th:href="@{/ui/sessions/start(reservationId=${r.id})}"
+ class="btn btn-success btn-sm"> Şarj Et</a>
+ </td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>
