@@ -46,12 +46,12 @@
  <div class="step-label" th:text="#{home.step4.title}">Reservation</div>
  <div class="step-desc" th:text="#{home.step4.desc}">Set a time slot and validate compatibility</div>
  </a>
- <a th:href="@{/ui/sessions/start}" class="step">
+ <a th:href="@{/ui/reservations}" class="step">
  <div class="step-num">5</div>
- <div class="step-label" th:text="#{home.step5.title}">Start Charging</div>
- <div class="step-desc" th:text="#{home.step5.desc}">Start the session and enter battery level</div>
+ <div class="step-label" th:text="#{home.step5.title}">Auto Start</div>
+ <div class="step-desc" th:text="#{home.step5.desc}">Charging starts automatically when reservation time begins</div>
  </a>
- <a th:href="@{/ui/sessions/start}" class="step">
+ <a th:href="@{/ui/reservations}" class="step">
  <div class="step-num">6</div>
  <div class="step-label" th:text="#{home.step6.title}">View Cost</div>
  <div class="step-desc" th:text="#{home.step6.desc}">Review kWh, unit price and total cost</div>
@@ -86,9 +86,9 @@
  </div>
  <div class="card">
  <div class="card-header"><span class="card-title" th:text="#{home.sessions.title}">Charging Sessions</span></div>
- <p class="text-muted" style="font-size:0.9rem;margin-bottom:1rem;" th:text="#{home.sessions.desc}">Start or end a charging session.</p>
+ <p class="text-muted" style="font-size:0.9rem;margin-bottom:1rem;" th:text="#{home.sessions.desc}">Sessions start automatically when the reservation window begins.</p>
  <div class="flex gap-1">
- <a th:href="@{/ui/sessions/start}" class="btn btn-primary btn-sm" th:text="#{common.start}">Start</a>
+ <a th:href="@{/ui/reservations}" class="btn btn-primary btn-sm" th:text="#{home.sessions.cta}">Open Reservations</a>
  </div>
  </div>
  </div>

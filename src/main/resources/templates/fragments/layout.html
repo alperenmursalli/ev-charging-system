@@ -9,7 +9,6 @@
   <a th:href="@{/ui/stations}" th:classappend="${activePage == 'stations'} ? 'active'" th:text="#{nav.stations}">Stations</a>
   <a th:href="@{/ui/stations/map}" th:classappend="${activePage == 'map'} ? 'active'" th:text="#{nav.map}">Map</a>
   <a th:href="@{/ui/reservations}" th:classappend="${activePage == 'reservations'} ? 'active'" th:text="#{nav.reservations}">Reservations</a>
-  <a th:href="@{/ui/sessions/start}" th:classappend="${activePage == 'sessions'} ? 'active'" th:text="#{nav.charge}">Charge</a>
   <div class="flex gap-1" style="align-items:center;">
    <button class="btn btn-outline btn-sm" type="button" onclick="setLanguage('en')">EN</button>
    <button class="btn btn-outline btn-sm" type="button" onclick="setLanguage('tr')">TR</button>
