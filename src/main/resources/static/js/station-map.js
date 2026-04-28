@@ -1,5 +1,6 @@
 (function () {
   const bootstrap = window.stationMapBootstrap || {};
+  const labels = bootstrap.labels || {};
   const state = {
     map: null,
     stations: [],
@@ -34,6 +35,16 @@
     return (bootstrap.apiKey || "").trim();
   }
 
+  function label(key, fallback) {
+    return labels[key] || fallback;
+  }
+
+  function formatLabel(key, fallback) {
+    const template = label(key, fallback);
+    const values = Array.prototype.slice.call(arguments, 2);
+    return values.reduce((result, value, index) => result.replace(`{${index}}`, value), template);
+  }
+
   function markerColor(status) {
     if (status === "AVAILABLE") {
       return "#16a34a";
@@ -56,12 +67,12 @@
 
   function mapStatusLabel(status) {
     if (status === "AVAILABLE") {
-      return "Müsait";
+      return label("available", "Available");
     }
     if (status === "OCCUPIED") {
-      return "Dolu";
+      return label("occupied", "Occupied");
     }
-    return "Offline";
+    return label("offline", "Offline");
   }
 
   function buildDiscoveryUrl() {
@@ -84,10 +95,10 @@
   }
 
   async function loadStations() {
-    dom.filterStatus.textContent = "İstasyonlar yükleniyor...";
+    dom.filterStatus.textContent = label("loadingStations", "Loading stations...");
     const response = await fetch(buildDiscoveryUrl());
     if (!response.ok) {
-      throw new Error("İstasyonlar yüklenemedi.");
+      throw new Error(label("stationsLoadError", "Failed to load stations."));
     }
 
     state.stations = await response.json();
@@ -98,12 +109,12 @@
     renderStationList();
     renderMarkers();
 
-    dom.filterStatus.textContent = `${state.stations.length} istasyon bulundu.`;
+    dom.filterStatus.textContent = formatLabel("stationsFound", "{0} stations found.", state.stations.length);
   }
 
   function renderStationList() {
     if (!state.stations.length) {
-      dom.list.innerHTML = '<div class="text-muted" style="padding:1rem;text-align:center;">Filtreye uyan istasyon bulunamadı.</div>';
+      dom.list.innerHTML = `<div class="text-muted" style="padding:1rem;text-align:center;">${escapeHtml(label("noStationsFound", "No stations matched the filters."))}</div>`;
       return;
     }
 
@@ -118,9 +129,9 @@
           <div class="station-address">${escapeHtml(station.address)}</div>
           <div class="station-meta">
             <span class="badge ${badgeClass(station.status)}">${mapStatusLabel(station.status)}</span>
-            <span class="badge badge-blue">${station.availableChargerCount}/${station.totalChargerCount} müsait</span>
-            ${station.distanceKm != null ? `<span class="badge badge-gray">${station.distanceKm} km</span>` : ""}
-            ${station.minPricePerKwh != null ? `<span class="badge badge-gray">₺${station.minPricePerKwh}/kWh'den</span>` : ""}
+            <span class="badge badge-blue">${escapeHtml(formatLabel("availableCount", "{0}/{1} available", station.availableChargerCount, station.totalChargerCount))}</span>
+            ${station.distanceKm != null ? `<span class="badge badge-gray">${escapeHtml(formatLabel("distanceKm", "{0} km", station.distanceKm))}</span>` : ""}
+            ${station.minPricePerKwh != null ? `<span class="badge badge-gray">${escapeHtml(formatLabel("priceFrom", "From ₺{0}/kWh", station.minPricePerKwh))}</span>` : ""}
           </div>
         </div>
       `;
@@ -195,7 +206,7 @@
 
     const response = await fetch(`/stations/${stationId}/chargers`);
     if (!response.ok) {
-      throw new Error("Charger detayları alınamadı.");
+      throw new Error(label("chargerDetailsError", "Failed to fetch charger details."));
     }
 
     const chargers = await response.json();
@@ -235,8 +246,8 @@
       <h2 style="font-size:1rem;padding-right:1.4rem;">${escapeHtml(station.name)}</h2>
       <p class="text-muted" style="margin-top:0.45rem;">${escapeHtml(station.address)}</p>
       <div class="detail-section">
-        <h3>Detay</h3>
-        <p class="text-muted">Charger detayları yükleniyor...</p>
+        <h3>${escapeHtml(label("detailSection", "Details"))}</h3>
+        <p class="text-muted">${escapeHtml(label("loadingChargerDetails", "Loading charger details..."))}</p>
       </div>
     `;
   }
@@ -266,12 +277,12 @@
             </div>
             <div class="charger-actions">
               ${charger.status === "AVAILABLE"
-                ? `<a href="/ui/reservations/create?chargerId=${charger.id}" class="btn btn-primary btn-sm">Rezerve Et</a>`
-                : `<span class="text-muted" style="font-size:0.78rem;">Bu charger şu an müsait değil.</span>`}
+                ? `<a href="/ui/reservations/create?chargerId=${charger.id}" class="btn btn-primary btn-sm">${escapeHtml(label("reserve", "Reserve"))}</a>`
+                : `<span class="text-muted" style="font-size:0.78rem;">${escapeHtml(label("chargerUnavailable", "This charger is not available right now."))}</span>`}
             </div>
           </div>
         `).join("")
-      : '<p class="text-muted">Bu istasyon için charger listesi bulunamadı.</p>';
+      : `<p class="text-muted">${escapeHtml(label("noChargers", "No chargers found for this station."))}</p>`;
 
     dom.detailPanel.classList.add("visible");
     dom.detailContent.innerHTML = `
@@ -279,13 +290,13 @@
       <p class="text-muted" style="margin-top:0.45rem;">${escapeHtml(station.address)}</p>
       <div class="station-meta" style="margin-top:0.8rem;">
         <span class="badge ${badgeClass(station.status)}">${mapStatusLabel(station.status)}</span>
-        <span class="badge badge-blue">${station.availableChargerCount}/${station.totalChargerCount} müsait</span>
-        ${station.distanceKm != null ? `<span class="badge badge-gray">${station.distanceKm} km</span>` : ""}
-        ${station.minPricePerKwh != null ? `<span class="badge badge-gray">₺${station.minPricePerKwh}/kWh'den</span>` : ""}
+        <span class="badge badge-blue">${escapeHtml(formatLabel("availableCount", "{0}/{1} available", station.availableChargerCount, station.totalChargerCount))}</span>
+        ${station.distanceKm != null ? `<span class="badge badge-gray">${escapeHtml(formatLabel("distanceKm", "{0} km", station.distanceKm))}</span>` : ""}
+        ${station.minPricePerKwh != null ? `<span class="badge badge-gray">${escapeHtml(formatLabel("priceFrom", "From ₺{0}/kWh", station.minPricePerKwh))}</span>` : ""}
       </div>
       ${state.routeSummary ? `
         <div class="detail-section">
-          <h3>Rota</h3>
+          <h3>${escapeHtml(label("routeSection", "Route"))}</h3>
           <div class="station-meta">
             <span class="badge badge-blue">${escapeHtml(state.routeSummary.distanceText)}</span>
             <span class="badge badge-gray">${escapeHtml(state.routeSummary.durationText)}</span>
@@ -293,15 +304,15 @@
         </div>
       ` : ""}
       <div class="detail-section">
-        <h3>İstasyon</h3>
+        <h3>${escapeHtml(label("stationSection", "Station"))}</h3>
         <div class="charger-actions">
-          <a href="/ui/stations/${station.id}" class="btn btn-outline btn-sm">Detay Sayfası</a>
-          <button type="button" class="btn btn-outline btn-sm" id="route-to-station">Yol Tarifi</button>
-          <a href="https://maps.google.com/?q=${station.latitude},${station.longitude}" target="_blank" class="btn btn-outline btn-sm">Google Maps</a>
+          <a href="/ui/stations/${station.id}" class="btn btn-outline btn-sm">${escapeHtml(label("stationDetailPage", "Station Page"))}</a>
+          <button type="button" class="btn btn-outline btn-sm" id="route-to-station">${escapeHtml(label("directions", "Directions"))}</button>
+          <a href="https://maps.google.com/?q=${station.latitude},${station.longitude}" target="_blank" class="btn btn-outline btn-sm">${escapeHtml(label("openGoogleMaps", "Google Maps"))}</a>
         </div>
       </div>
       <div class="detail-section">
-        <h3>Charger Listesi</h3>
+        <h3>${escapeHtml(label("chargerList", "Charger List"))}</h3>
         ${chargerMarkup}
       </div>
     `;
@@ -334,7 +345,7 @@
 
   function drawRoute(station) {
     if (!state.userPosition) {
-      alert("Önce 'Konumumu Bul' ile mevcut konumunuzu paylaşın.");
+      alert(label("shareLocationFirst", "Share your location first with Find My Location."));
       return;
     }
 
@@ -354,7 +365,7 @@
         } : null;
         renderDetailPanel(station, state.chargersByStationId.get(station.id) || station.chargers || []);
       } else {
-        alert("Yol tarifi alınamadı: " + status);
+        alert(label("routeUnavailable", "Could not get directions: ") + status);
       }
     });
   }
@@ -370,7 +381,7 @@
       state.userMarker = new google.maps.Marker({
         position: state.userPosition,
         map: state.map,
-        title: "Konumunuz",
+        title: label("yourLocation", "Your Location"),
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 9,
@@ -386,18 +397,18 @@
 
   function locateUser() {
     if (!navigator.geolocation) {
-      alert("Tarayıcınız konum desteği vermiyor.");
+      alert(label("geolocationUnsupported", "Your browser does not support geolocation."));
       return;
     }
 
-    dom.filterStatus.textContent = "Konum alınıyor...";
+    dom.filterStatus.textContent = label("locating", "Getting your location...");
     navigator.geolocation.getCurrentPosition(async (position) => {
       setUserPosition(position.coords.latitude, position.coords.longitude);
       await loadStations();
-      dom.filterStatus.textContent = "Konuma göre istasyonlar güncellendi.";
+      dom.filterStatus.textContent = label("locationUpdated", "Stations updated for your location.");
     }, () => {
       dom.filterStatus.textContent = "";
-      alert("Konum alınamadı.");
+      alert(label("locationFailed", "Could not get your location."));
     });
   }
 
@@ -459,7 +470,7 @@
   dom.applyApiKey.addEventListener("click", () => {
     const apiKey = dom.apiKeyInput.value.trim();
     if (!apiKey) {
-      alert("API key girin.");
+      alert(label("enterApiKey", "Enter an API key."));
       return;
     }
     bootstrap.apiKey = apiKey;

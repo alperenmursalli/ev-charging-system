@@ -14,6 +14,8 @@ import com.example.evsystem.service.StationService;
 import com.example.evsystem.service.VehicleService;
 import com.example.evsystem.exception.BusinessException;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,17 +33,20 @@ public class WebController {
     private final ChargerService chargerService;
     private final ReservationService reservationService;
     private final ChargingSessionService chargingSessionService;
+    private final MessageSource messageSource;
 
     public WebController(VehicleService vehicleService,
                          StationService stationService,
                          ChargerService chargerService,
                          ReservationService reservationService,
-                         ChargingSessionService chargingSessionService) {
+                         ChargingSessionService chargingSessionService,
+                         MessageSource messageSource) {
         this.vehicleService = vehicleService;
         this.stationService = stationService;
         this.chargerService = chargerService;
         this.reservationService = reservationService;
         this.chargingSessionService = chargingSessionService;
+        this.messageSource = messageSource;
     }
 
     // Ana Sayfa
@@ -75,7 +80,8 @@ public class WebController {
         }
         try {
             vehicleService.save(vehicle);
-            redirectAttrs.addFlashAttribute("successMsg", "Araç başarıyla eklendi!");
+            redirectAttrs.addFlashAttribute("successMsg",
+                    messageSource.getMessage("vehicles.add.success", null, LocaleContextHolder.getLocale()));
             return "redirect:/ui/vehicles";
         } catch (BusinessException e) {
             model.addAttribute("errorMsg", e.getMessage());

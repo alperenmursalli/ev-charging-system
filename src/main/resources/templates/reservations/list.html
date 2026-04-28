@@ -2,50 +2,17 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
- <title>Rezervasyonlar – EV Charging</title>
+ <title th:text="#{nav.reservations} + ' – EV Charging'">Reservations – EV Charging</title>
  <link rel="stylesheet" th:href="@{/css/style.css}"/>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 </head>
 <body>
-<nav class="navbar">
- <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
- <div class="navbar-links">
- <a th:href="@{/ui/home}">Ana Sayfa</a>
- <a th:href="@{/ui/vehicles}">Araçlar</a>
- <a th:href="@{/ui/stations}">İstasyonlar</a>
- <a th:href="@{/ui/stations/map}"> Harita</a>
- <a th:href="@{/ui/reservations}" class="active">Rezervasyonlar</a>
- <a th:href="@{/ui/sessions/start}">Şarj Et</a>
- <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
- <span id="darkIcon"></span>
- <span class="toggle-label" id="darkLabel">Dark</span>
- </button>
- </div>
-</nav>
-<script>
- (function(){
- var d = localStorage.getItem("evDark");
- if(d === "1") { document.body.classList.add("dark"); }
- })();
- function toggleDark() {
- var on = document.body.classList.toggle("dark");
- localStorage.setItem("evDark", on ? "1" : "0");
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
- window.addEventListener("DOMContentLoaded", function(){
- var on = document.body.classList.contains("dark");
- var btn = document.getElementById("darkBtn");
- if(btn){
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
- });
-</script>
+<th:block th:replace="~{fragments/layout :: navbar('reservations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
 <div class="page-wrapper">
  <div class="flex-between mb-2">
- <h1 class="page-title"> Rezervasyonlar</h1>
- <a th:href="@{/ui/reservations/create}" class="btn btn-primary">+ Yeni Rezervasyon</a>
+ <h1 class="page-title" th:text="#{nav.reservations}">Reservations</h1>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary" th:text="#{common.new} + ' ' + #{nav.reservations}">+ New Reservation</a>
  </div>
 
  <div class="card" th:if="${reservations.isEmpty()}">
@@ -81,6 +48,6 @@
  </div>
  </div>
 </div>
-<footer>EV Charging System &copy; 2026</footer>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
 </body>
 </html>
