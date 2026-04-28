@@ -9,7 +9,9 @@
     chargersByStationId: new Map(),
     selectedStationId: null,
     userPosition: null,
+    userAccuracyMeters: null,
     userMarker: null,
+    manualAdjustMode: false,
     directionsService: null,
     directionsRenderer: null,
     googleLoaded: false,
@@ -22,7 +24,9 @@
     detailContent: document.getElementById("detail-content"),
     detailClose: document.getElementById("detail-close"),
     locate: document.getElementById("btn-locate"),
+    adjustLocation: document.getElementById("btn-adjust-location"),
     clearRoute: document.getElementById("clear-route"),
+    locationDebug: document.getElementById("location-debug"),
     emptyState: document.getElementById("map-empty-state"),
     apiKeyInput: document.getElementById("api-key-input"),
     applyApiKey: document.getElementById("apply-api-key"),
@@ -193,6 +197,24 @@
     }
   }
 
+  function renderLocationDebug() {
+    if (!dom.locationDebug) {
+      return;
+    }
+    if (!state.userPosition) {
+      dom.locationDebug.textContent = label("locationDebugEmpty", "Location not selected yet.");
+      return;
+    }
+    const accuracy = state.userAccuracyMeters != null ? Math.round(state.userAccuracyMeters) : "-";
+    dom.locationDebug.innerHTML = `<strong>${escapeHtml(formatLabel(
+      "locationDebugSet",
+      "Lat: {0}, Lng: {1}, Accuracy: {2} m",
+      state.userPosition.lat.toFixed(6),
+      state.userPosition.lng.toFixed(6),
+      accuracy
+    ))}</strong>`;
+  }
+
   async function loadChargers(stationId) {
     const station = state.stations.find((item) => item.id === stationId);
     if (station && Array.isArray(station.chargers) && station.chargers.length) {
@@ -235,6 +257,9 @@
     try {
       const chargers = await loadChargers(stationId);
       renderDetailPanel(station, chargers);
+      if (state.userPosition && state.googleLoaded && state.directionsService && state.directionsRenderer) {
+        drawRoute(station, chargers, true);
+      }
     } catch (error) {
       renderDetailPanelError(station, error.message);
     }
@@ -343,9 +368,11 @@
     renderStationList();
   }
 
-  function drawRoute(station) {
+  function drawRoute(station, chargers, silent) {
     if (!state.userPosition) {
-      alert(label("shareLocationFirst", "Share your location first with Find My Location."));
+      if (!silent) {
+        alert(label("shareLocationFirst", "Share your location first with Find My Location."));
+      }
       return;
     }
 
@@ -363,15 +390,19 @@
           distanceText: leg.distance ? leg.distance.text : "",
           durationText: leg.duration ? leg.duration.text : ""
         } : null;
-        renderDetailPanel(station, state.chargersByStationId.get(station.id) || station.chargers || []);
+        renderDetailPanel(station, chargers || state.chargersByStationId.get(station.id) || station.chargers || []);
       } else {
-        alert(label("routeUnavailable", "Could not get directions: ") + status);
+        if (!silent) {
+          alert(label("routeUnavailable", "Could not get directions: ") + status);
+        }
       }
     });
   }
 
-  function setUserPosition(lat, lng) {
+  function setUserPosition(lat, lng, accuracyMeters) {
     state.userPosition = { lat, lng };
+    state.userAccuracyMeters = accuracyMeters != null ? accuracyMeters : state.userAccuracyMeters;
+    renderLocationDebug();
 
     if (state.googleLoaded && state.map) {
       if (state.userMarker) {
@@ -382,6 +413,7 @@
         position: state.userPosition,
         map: state.map,
         title: label("yourLocation", "Your Location"),
+        draggable: state.manualAdjustMode,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 9,
@@ -389,6 +421,18 @@
           fillOpacity: 1,
           strokeColor: "#ffffff",
           strokeWeight: 3
+        }
+      });
+      state.userMarker.addListener("dragend", async (event) => {
+        state.userPosition = {
+          lat: event.latLng.lat(),
+          lng: event.latLng.lng()
+        };
+        state.userAccuracyMeters = null;
+        renderLocationDebug();
+        await loadStations();
+        if (state.selectedStationId != null) {
+          focusStation(state.selectedStationId);
         }
       });
       renderMarkers();
@@ -403,13 +447,49 @@
 
     dom.filterStatus.textContent = label("locating", "Getting your location...");
     navigator.geolocation.getCurrentPosition(async (position) => {
-      setUserPosition(position.coords.latitude, position.coords.longitude);
+      state.manualAdjustMode = false;
+      setUserPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
       await loadStations();
       dom.filterStatus.textContent = label("locationUpdated", "Stations updated for your location.");
     }, () => {
       dom.filterStatus.textContent = "";
       alert(label("locationFailed", "Could not get your location."));
+    }, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
     });
+  }
+
+  async function enableManualAdjust() {
+    if (!state.userPosition) {
+      await new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          alert(label("geolocationUnsupported", "Your browser does not support geolocation."));
+          resolve();
+          return;
+        }
+        navigator.geolocation.getCurrentPosition((position) => {
+          state.manualAdjustMode = true;
+          setUserPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+          resolve();
+        }, () => {
+          alert(label("locationFailed", "Could not get your location."));
+          resolve();
+        }, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        });
+      });
+    }
+    state.manualAdjustMode = true;
+    if (state.userMarker) {
+      state.userMarker.setDraggable(true);
+    } else if (state.userPosition) {
+      setUserPosition(state.userPosition.lat, state.userPosition.lng, state.userAccuracyMeters);
+    }
+    dom.filterStatus.textContent = label("adjustingLocation", "Drag the blue marker to correct your location.");
   }
 
   function loadGoogleMaps(apiKey) {
@@ -465,6 +545,7 @@
   });
 
   dom.locate.addEventListener("click", locateUser);
+  dom.adjustLocation.addEventListener("click", enableManualAdjust);
   dom.clearRoute.addEventListener("click", clearRoute);
   dom.detailClose.addEventListener("click", closeDetailPanel);
   dom.applyApiKey.addEventListener("click", () => {
@@ -480,6 +561,7 @@
   loadStations().catch((error) => {
     dom.filterStatus.textContent = error.message;
   });
+  renderLocationDebug();
 
   if (selectedApiKey()) {
     loadGoogleMaps(selectedApiKey());

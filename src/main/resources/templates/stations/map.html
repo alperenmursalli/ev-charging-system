@@ -46,6 +46,8 @@
  .station-address { font-size:0.78rem; color: var(--text-muted); margin-bottom:0.45rem; }
  .station-meta { display:flex; gap:0.4rem; flex-wrap:wrap; }
  .sidebar-footer { padding:0.85rem 1rem; border-top:1px solid var(--border); display:flex; gap:0.65rem; }
+ .location-debug { padding:0.85rem 1rem; border-top:1px solid var(--border); font-size:0.78rem; color:var(--text-muted); }
+ .location-debug strong { color:var(--text); }
  .map-main { flex:1; position:relative; min-width:0; }
  #map { width:100%; height:100%; }
  .map-empty-state {
@@ -174,8 +176,10 @@
    <div class="text-muted" style="padding:1rem;text-align:center;" th:text="#{stationMap.loading}">Loading stations...</div>
   </div>
 
+  <div class="location-debug" id="location-debug" th:text="#{stationMap.locationDebug.empty}">Location not selected yet.</div>
   <div class="sidebar-footer">
    <button id="btn-locate" class="btn btn-outline btn-sm" style="flex:1;" th:text="#{stationMap.locate}">Find My Location</button>
+   <button id="btn-adjust-location" class="btn btn-outline btn-sm" type="button" th:text="#{stationMap.adjustLocation}">Adjust Location</button>
    <button id="clear-route" class="btn btn-outline btn-sm" type="button" th:text="#{stationMap.clearRoute}">Clear Route</button>
   </div>
  </aside>
@@ -233,7 +237,11 @@
       locationUpdated: /*[[#{stationMap.locationUpdated}]]*/ 'Stations updated for your location.',
       locationFailed: /*[[#{stationMap.locationFailed}]]*/ 'Could not get your location.',
       enterApiKey: /*[[#{stationMap.enterApiKey}]]*/ 'Enter an API key.',
-      yourLocation: /*[[#{stationMap.yourLocation}]]*/ 'Your Location'
+      yourLocation: /*[[#{stationMap.yourLocation}]]*/ 'Your Location',
+      adjustingLocation: /*[[#{stationMap.adjustingLocation}]]*/ 'Drag the blue marker to correct your location.',
+      adjustLocation: /*[[#{stationMap.adjustLocation}]]*/ 'Adjust Location',
+      locationDebugEmpty: /*[[#{stationMap.locationDebug.empty}]]*/ 'Location not selected yet.',
+      locationDebugSet: /*[[#{stationMap.locationDebug.set}]]*/ 'Lat: {0}, Lng: {1}, Accuracy: {2} m'
     }
   };
 </script>
