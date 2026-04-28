@@ -202,7 +202,7 @@ public class WebController {
     @GetMapping("/sessions/{id}/end")
     public String endSessionForm(@PathVariable Long id, Model model) {
         try {
-            model.addAttribute("session", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
+            model.addAttribute("chargingSession", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
         } catch (BusinessException e) {
             model.addAttribute("errorMsg", e.getMessage());
             return "error";
@@ -216,14 +216,14 @@ public class WebController {
                              RedirectAttributes redirectAttrs,
                              Model model) {
         try {
-            ChargingSessionResponse session = ChargingSessionResponse.from(
+            ChargingSessionResponse chargingSession = ChargingSessionResponse.from(
                     chargingSessionService.endSession(id, endBatteryLevel));
-            redirectAttrs.addFlashAttribute("session", session);
+            redirectAttrs.addFlashAttribute("chargingSession", chargingSession);
             return "redirect:/ui/sessions/" + id + "/result";
         } catch (BusinessException e) {
             model.addAttribute("errorMsg", e.getMessage());
             try {
-                model.addAttribute("session", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
+                model.addAttribute("chargingSession", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
             } catch (Exception ignored) {}
             return "sessions/end";
         }
@@ -231,9 +231,9 @@ public class WebController {
 
     @GetMapping("/sessions/{id}/result")
     public String sessionResult(@PathVariable Long id, Model model) {
-        if (!model.containsAttribute("session")) {
+        if (!model.containsAttribute("chargingSession")) {
             try {
-                model.addAttribute("session", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
+                model.addAttribute("chargingSession", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
             } catch (BusinessException e) {
                 model.addAttribute("errorMsg", e.getMessage());
                 return "error";

@@ -64,7 +64,7 @@
  </div>
 
  <div class="flex gap-1">
- <a th:href="@{/ui/sessions/start(reservationId=${reservation.id})}" class="btn btn-success" th:text="#{sessions.start.button}">Start Charging</a>
+ <span class="btn btn-success" style="pointer-events:none;opacity:0.8;" th:text="#{reservations.autoStartInfo}">Charging will start automatically at reservation time</span>
  <a th:href="@{/ui/reservations/create}" class="btn btn-outline" th:text="#{common.new} + ' ' + #{nav.reservations}">+ New Reservation</a>
  <a th:href="@{/ui/reservations}" class="btn btn-outline" th:text="#{common.list}">List</a>
  </div>
