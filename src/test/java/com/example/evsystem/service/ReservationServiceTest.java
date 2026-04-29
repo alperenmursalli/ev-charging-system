@@ -35,7 +35,7 @@ class ReservationServiceTest {
     private ChargingSessionRepository chargingSessionRepository;
     private ReservationService reservationService;
 
-    // --- Yardımcı builder metodlar ---
+    // --- Helper builder methods ---
 
     private Vehicle buildVehicle(ConnectorType connectorType) {
         Vehicle v = new Vehicle();
@@ -78,7 +78,7 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 1) Uyumlu araç ve charger ile reservation oluşturulabiliyor mu?
+    // 1) Can a reservation be created with a compatible vehicle and charger?
     // -----------------------------------------------------------------------
     @Test
     void shouldCreateReservation_whenVehicleAndChargerAreCompatible() {
@@ -102,7 +102,7 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 2) Vehicle connector type ile Charger connector type farklıysa hata veriyor mu?
+    // 2) Does the service reject different vehicle and charger connector types?
     // -----------------------------------------------------------------------
     @Test
     void shouldThrowBadRequest_whenConnectorTypesAreIncompatible() {
@@ -123,7 +123,7 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 3) Aynı charger aynı saat aralığında tekrar rezerve edilebiliyor mu?
+    // 3) Does the service reject an overlapping reservation for the same charger?
     // -----------------------------------------------------------------------
     @Test
     void shouldThrowConflict_whenChargerAlreadyReservedInSameTimeSlot() {
@@ -136,7 +136,7 @@ class ReservationServiceTest {
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
         when(chargerRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(charger));
         when(reservationRepository.existsByChargerIdAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
-                eq(1L), any(), any(), any())).thenReturn(true); // çakışma var
+                eq(1L), any(), any(), any())).thenReturn(true); // overlap exists
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> reservationService.create(buildRequest(1L, 1L, start, end)));
@@ -146,7 +146,7 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 4) 2 saatten uzun reservation engelleniyor mu?
+    // 4) Does the service reject reservations longer than two hours?
     // -----------------------------------------------------------------------
     @Test
     void shouldThrowBadRequest_whenReservationExceedsTwoHours() {
@@ -154,7 +154,7 @@ class ReservationServiceTest {
         Charger charger = buildCharger(ConnectorType.TYPE2, ChargerStatus.AVAILABLE);
 
         LocalDateTime start = LocalDateTime.now().plusMinutes(10);
-        LocalDateTime end = start.plusHours(3); // 3 saat → geçersiz
+        LocalDateTime end = start.plusHours(3); // 3 hours is invalid
 
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
         when(chargerRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(charger));
@@ -167,14 +167,14 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 5) Geçmiş zamana reservation yapılması engelleniyor mu?
+    // 5) Does the service reject reservations that start in the past?
     // -----------------------------------------------------------------------
     @Test
     void shouldThrowBadRequest_whenStartTimeIsInThePast() {
         Vehicle vehicle = buildVehicle(ConnectorType.TYPE2);
         Charger charger = buildCharger(ConnectorType.TYPE2, ChargerStatus.AVAILABLE);
 
-        LocalDateTime start = LocalDateTime.now().minusHours(1); // geçmiş
+        LocalDateTime start = LocalDateTime.now().minusHours(1); // past
         LocalDateTime end = LocalDateTime.now().plusMinutes(30);
 
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
@@ -188,12 +188,12 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 6) Charger status AVAILABLE değilse reservation engelleniyor mu?
+    // 6) Does the service reject reservations when the charger is not available?
     // -----------------------------------------------------------------------
     @Test
     void shouldThrowConflict_whenChargerIsNotAvailable() {
         Vehicle vehicle = buildVehicle(ConnectorType.TYPE2);
-        Charger charger = buildCharger(ConnectorType.TYPE2, ChargerStatus.OCCUPIED); // müsait değil
+        Charger charger = buildCharger(ConnectorType.TYPE2, ChargerStatus.OCCUPIED); // not available
 
         LocalDateTime start = LocalDateTime.now().plusMinutes(10);
         LocalDateTime end = start.plusHours(1);
@@ -209,7 +209,7 @@ class ReservationServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // Mevcut testler (dokunmadık, oldukları gibi korundu)
+    // Existing tests kept as-is
     // -----------------------------------------------------------------------
     @Test
     void cancelRejectsInProgressReservations() {

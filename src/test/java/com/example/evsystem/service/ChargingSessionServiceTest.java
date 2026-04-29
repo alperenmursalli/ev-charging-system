@@ -32,7 +32,7 @@ class ChargingSessionServiceTest {
     private ReservationService reservationService;
     private ChargingSessionService chargingSessionService;
 
-    // --- Yardımcı builder metodlar ---
+    // --- Helper builder methods ---
 
     private Vehicle buildVehicle(double batteryCapacity) {
         Vehicle v = new Vehicle();
@@ -64,7 +64,7 @@ class ChargingSessionServiceTest {
         reservation.setStartTime(startedAt.minusMinutes(5));
         reservation.setEndTime(reservationEnd);
 
-        // reservation id → reflection ile set et
+        // Set reservation id through reflection.
         try {
             java.lang.reflect.Field idField = Reservation.class.getDeclaredField("id");
             idField.setAccessible(true);
@@ -93,8 +93,8 @@ class ChargingSessionServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 1) consumed kWh doğru hesaplanıyor mu?
-    //    Formül: batteryCapacity * (endBattery - startBattery) / 100
+    // 1) Is consumed kWh calculated correctly?
+    //    Formula: batteryCapacity * (endBattery - startBattery) / 100
     //    75 kWh * (80 - 20) / 100 = 45.00 kWh
     // -----------------------------------------------------------------------
     @Test
@@ -106,7 +106,7 @@ class ChargingSessionServiceTest {
                 LocalDateTime.now().minusMinutes(30),
                 LocalDateTime.now().plusMinutes(30));
 
-        // session id → reflection
+        // Set session id through reflection.
         try {
             java.lang.reflect.Field idField = ChargingSession.class.getDeclaredField("id");
             idField.setAccessible(true);
@@ -126,7 +126,7 @@ class ChargingSessionServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 2) Total cost doğru hesaplanıyor mu?
+    // 2) Is total cost calculated correctly?
     //    consumedKwh * pricePerKwh = 45.00 * 2.0 = 90.00
     // -----------------------------------------------------------------------
     @Test
@@ -157,7 +157,7 @@ class ChargingSessionServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 3) Session tamamlanınca status COMPLETED oluyor mu?
+    // 3) Is the status set to COMPLETED when the session ends?
     // -----------------------------------------------------------------------
     @Test
     void shouldSetStatusCompleted_whenSessionEnds() {
@@ -186,7 +186,7 @@ class ChargingSessionServiceTest {
     }
 
     // -----------------------------------------------------------------------
-    // 4) End battery level start battery level'dan düşükse hata veriyor mu?
+    // 4) Does the service reject an end battery level below the start battery level?
     // -----------------------------------------------------------------------
     @Test
     void shouldThrowBadRequest_whenEndBatteryLowerThanStartBattery() {
@@ -208,24 +208,24 @@ class ChargingSessionServiceTest {
         when(chargingSessionRepository.findById(4L)).thenReturn(Optional.of(session));
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> chargingSessionService.endSession(4L, 40f)); // 40 < 60 → hata
+                () -> chargingSessionService.endSession(4L, 40f)); // 40 < 60 is invalid
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(chargingSessionRepository, never()).save(any());
     }
 
     // -----------------------------------------------------------------------
-    // 5) Süresi dolan active session'lar scheduler tarafından kapatılıyor mu?
+    // 5) Are expired active sessions completed by the scheduler?
     // -----------------------------------------------------------------------
     @Test
     void shouldAutoComplete_expiredActiveSessions() {
         Vehicle vehicle = buildVehicle(100.0);
         Charger charger = buildCharger(1.5f);
 
-        // Reservation süresi geçmiş
+        // Reservation window has already ended.
         ChargingSession session = buildActiveSession(vehicle, charger, 10f,
                 LocalDateTime.now().minusHours(2),
-                LocalDateTime.now().minusMinutes(1)); // endTime geçmişte
+                LocalDateTime.now().minusMinutes(1)); // endTime is in the past
 
         when(chargingSessionRepository.findByStatusAndReservation_EndTimeLessThanEqual(
                 eq(ChargingSessionStatus.ACTIVE), any())).thenReturn(java.util.List.of(session));

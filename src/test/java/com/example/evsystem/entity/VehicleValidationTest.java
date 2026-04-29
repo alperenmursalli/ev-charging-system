@@ -39,7 +39,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 1) Brand boş olursa hata veriyor mu?
+    // 1) Does validation fail when brand is blank?
     // -----------------------------------------------------------------------
     @Test
     void shouldFailValidation_whenBrandIsBlank() {
@@ -53,7 +53,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 2) Model boş olursa hata veriyor mu?
+    // 2) Does validation fail when model is blank?
     // -----------------------------------------------------------------------
     @Test
     void shouldFailValidation_whenModelIsBlank() {
@@ -67,7 +67,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 3) Battery capacity negatif olursa hata veriyor mu?
+    // 3) Does validation fail when battery capacity is negative?
     // -----------------------------------------------------------------------
     @Test
     void shouldFailValidation_whenBatteryCapacityIsNegative() {
@@ -81,7 +81,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 4) Battery capacity 0 olursa hata veriyor mu?
+    // 4) Does validation fail when battery capacity is zero?
     // -----------------------------------------------------------------------
     @Test
     void shouldFailValidation_whenBatteryCapacityIsZero() {
@@ -95,7 +95,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 5) Connector type null olursa hata veriyor mu?
+    // 5) Does validation fail when connector type is null?
     // -----------------------------------------------------------------------
     @Test
     void shouldFailValidation_whenConnectorTypeIsNull() {
@@ -109,7 +109,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 6) Plate number boş olursa hata veriyor mu?
+    // 6) Does validation fail when plate number is blank?
     // -----------------------------------------------------------------------
     @Test
     void shouldFailValidation_whenPlateNumberIsBlank() {
@@ -123,7 +123,7 @@ class VehicleValidationTest {
     }
 
     // -----------------------------------------------------------------------
-    // 7) Tüm alanlar geçerliyse validation geçiyor mu?
+    // 7) Does validation pass when all fields are valid?
     // -----------------------------------------------------------------------
     @Test
     void shouldPassValidation_whenAllFieldsAreValid() {
