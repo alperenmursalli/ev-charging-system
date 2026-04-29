@@ -1,4 +1,4 @@
-@baseUrl = http://{{host}}:{{port}}
+@baseUrl = http://localhost:8081
 
 ### ==========================================
 ### 1. VEHICLE POST İŞLEMLERİ (15 ARAÇ)
@@ -81,9 +81,7 @@ Content-Type: application/json
 {"brand": "MG", "model": "ZS EV", "batteryCapacity": 44.0, "connectorType": "CCS", "plateNumber": "34MGEV4"}
 
 
-### ==========================================
-### 2. STATION POST İŞLEMLERİ (5 İSTASYON)    id default üretildiğinden ekstra yazılmadı!!
-### Enum: StationStatus -> AVAILABLE, OCCUPIED, OFFLINE
+
 ### ==========================================
 
 POST {{baseUrl}}/stations
@@ -142,39 +140,35 @@ Content-Type: application/json
 }
 
 
-### ==========================================
-### 3. CHARGER POST İŞLEMLERİ (HER İSTASYONA 6 TANE - TOPLAM 30)    id kendiliğinden üretilecek, tekrar yazılmaz
-### Charger.java Entity kurallarına uygun
-### Enum: ChargerType -> AC, DC
-### Enum: PowerOutput -> KW_22, KW_50, KW_150
-### Enum: ConnectorType -> CCS, TYPE2, CHADEMO
+
 ### ==========================================
 
 # --- İstasyon 1 (Karşıyaka - station.id: 1) ---
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-01", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "station": { "id": 1 }}
+{"chargerCode": "DC-50-03", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "stationId": 1}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-02", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "station": { "id": 1 }}
+{"chargerCode": "DC-50-02", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "stationId": 1 }
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-01", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 1 }}
+{"chargerCode": "DC-50-01", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 1}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-01", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 1 }}
+{"chargerCode": "AC-52-01", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 1}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
+
 {
-  "chargerCode": "DC-50-01",
+  "chargerCode": "DC-50-04",
   "chargerType": "DC",
   "powerOutput": "KW_50",
   "connectorType": "CCS",
@@ -182,25 +176,29 @@ Content-Type: application/json
   "status": "AVAILABLE",
   "stationId": 1
 }
-
-{"chargerCode": "AC-22-02", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 1 }}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-02", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 1 }}
+{"chargerCode": "AC-52-02", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 1}
+###
+POST {{baseUrl}}/chargers
+Content-Type: application/json
+
+{"chargerCode": "DC-50-05", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 1}
 
 ### --- İstasyon 2 (Bornova - station.id: 2) ---
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-B1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 2 }}
+{"chargerCode": "DC-50-B1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 2}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
+
 {
-  "chargerCode": "AC-22-01",
+  "chargerCode": "AC-22-B0",
   "chargerType": "AC",
   "powerOutput": "KW_22",
   "connectorType": "TYPE2",
@@ -208,18 +206,22 @@ Content-Type: application/json
   "status": "AVAILABLE",
   "stationId": 2
 }
-
-{"chargerCode": "DC-50-B2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 2 }}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-B1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 2 }}
+{"chargerCode": "DC-50-B2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 2}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
+
+{"chargerCode": "AC-22-B1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 2}
+###
+POST {{baseUrl}}/chargers
+Content-Type: application/json
+
 {
-  "chargerCode": "DC-150-01",
+  "chargerCode": "DC-150-C0",
   "chargerType": "DC",
   "powerOutput": "KW_150",
   "connectorType": "CHADEMO",
@@ -227,114 +229,117 @@ Content-Type: application/json
   "status": "OFFLINE",
   "stationId": 3
 }
-
-{"chargerCode": "AC-22-B2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 2 }}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-B3", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 2 }}
+{"chargerCode": "AC-22-B2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 2}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-B1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CHADEMO", "pricePerKwh": 5.5, "status": "AVAILABLE", "station": { "id": 2 }}
+{"chargerCode": "AC-22-B3", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 2}
+###
+POST {{baseUrl}}/chargers
+Content-Type: application/json
+
+{"chargerCode": "DC-150-B1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CHADEMO", "pricePerKwh": 5.5, "status": "AVAILABLE", "stationId": 2}
 
 ### --- İstasyon 3 (Buca - OFFLINE İstasyon - station.id: 3) ---
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-C1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "OFFLINE", "station": { "id": 3 }}
+{"chargerCode": "DC-150-C1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "OFFLINE", "stationId": 3}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-C2", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "OFFLINE", "station": { "id": 3 }}
+{"chargerCode": "DC-150-C2", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "OFFLINE", "stationId": 3}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-C1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "OFFLINE", "station": { "id": 3 }}
+{"chargerCode": "DC-50-C1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "OFFLINE", "stationId": 3}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-C2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "OFFLINE", "station": { "id": 3 }}
+{"chargerCode": "DC-50-C2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "OFFLINE", "stationId": 3}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-C1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "OFFLINE", "station": { "id": 3 }}
+{"chargerCode": "AC-22-C1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "OFFLINE", "stationId": 3}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-C3", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "OFFLINE", "station": { "id": 3 }}
+{"chargerCode": "DC-50-C3", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "OFFLINE", "stationId": 3}
 
 ### --- İstasyon 4 (Alsancak - station.id: 4) ---
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-A1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "station": { "id": 4 }}
+{"chargerCode": "DC-150-A1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "stationId": 4}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-A1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 4 }}
+{"chargerCode": "DC-50-A1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 4}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-A1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 4 }}
+{"chargerCode": "AC-22-A1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 4}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-A2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 4 }}
+{"chargerCode": "AC-22-A2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 4}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-A3", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 4 }}
+{"chargerCode": "AC-22-A3", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 4}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-A2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 4 }}
+{"chargerCode": "DC-50-A2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 4}
 
 ### --- İstasyon 5 (Urla - station.id: 5) ---
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-150-U1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "station": { "id": 5 }}
+{"chargerCode": "DC-150-U1", "chargerType": "DC", "powerOutput": "KW_150", "connectorType": "CCS", "pricePerKwh": 5.5, "status": "AVAILABLE", "stationId": 5}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-U1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 5 }}
+{"chargerCode": "DC-50-U1", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 5}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-U1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 5 }}
+{"chargerCode": "AC-22-U1", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 5}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "AC-22-U2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 5 }}
+{"chargerCode": "AC-22-U2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "stationId": 5}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-U2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 5 }}
+{"chargerCode": "DC-50-U2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 5}
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
 
-{"chargerCode": "DC-50-U3", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 5 }}
+{"chargerCode": "DC-50-U3", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CHADEMO", "pricePerKwh": 4.0, "status": "AVAILABLE", "stationId": 5}
 
 
 ### ==========================================
@@ -364,13 +369,14 @@ Content-Type: application/json
 {
   "vehicleId": 3,
   "chargerId": 1,
-  "startTime": "2026-06-15T10:00:00",
-  "endTime": "2026-06-15T11:00:00"
+  "startTime": "2026-04-30T09:00:00",
+  "endTime": "2026-04-30T10:00:00"
 }
 
 ###
 # 5.2 - Geçmiş Tarih/Saat (400 Bad Request dönmeli)
 # Senaryo: Başlangıç tarihi bugünden (2026 Nisan'dan) önceki bir zamana ayarlanmış.
+###
 POST {{baseUrl}}/reservations
 Content-Type: application/json
 
@@ -383,17 +389,15 @@ Content-Type: application/json
 
 ###
 # 5.3 - 2 Saatten Uzun Rezervasyon (400 Bad Request dönmeli)
-# Senaryo: 10:00'dan 13:00'a kadar toplam 3 saatlik rezervasyon talebi.
+# Senaryo: Toplam 3 saatlik rezervasyon talebi.
 POST {{baseUrl}}/reservations
 Content-Type: application/json
 
 {
   "vehicleId": 1,
   "chargerId": 1,
-  "startTime": "2026-06-20T10:00:00",
-  "endTime": "2026-06-20T13:00:00"
-  "startTime": "2026-04-28T14:00:00",
-  "endTime": "2026-04-28T16:00:00"
+  "startTime": "2026-04-30T09:00:00",
+  "endTime": "2026-04-30T12:00:00"
 }
 
 ###
@@ -405,11 +409,8 @@ Content-Type: application/json
 {
   "vehicleId": 1,
   "chargerId": 2,
-  "startTime": "2026-06-25T14:00:00",
-  "endTime": "2026-06-25T15:00:00"
-  "chargerId": 1,
-  "startTime": "2026-04-28T12:37:00",
-  "endTime": "2026-04-28T12:39:00"
+  "startTime": "2026-04-30T10:00:00",
+  "endTime": "2026-04-30T11:00:00"
 }
 
 ###
@@ -420,8 +421,8 @@ Content-Type: application/json
 {
   "vehicleId": 2,
   "chargerId": 2,
-  "startTime": "2026-06-25T14:30:00",
-  "endTime": "2026-06-25T15:30:00"
+  "startTime": "2026-04-30T10:30:00",
+  "endTime": "2026-04-30T11:30:00"
 }
 
 
@@ -430,7 +431,18 @@ Content-Type: application/json
 
 
 
-### Ekstra: projedeki bazı otomasyon gibi örünen özel kod kısımları (görev tanımı dışında görünen) aşağıda yazdım silmek yerine, gerek duyulursa silinebilir
+### Ekstra: Session manuel akış testi
+### Not: /sessions/start isteğini reservation startTime geldikten sonra çalıştır.
+
+POST {{baseUrl}}/reservations
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "chargerId": 3,
+  "startTime": "2026-04-30T12:00:00",
+  "endTime": "2026-04-30T13:00:00"
+}
 
 > {%
 client.global.set("manualReservationId", response.body.id);
@@ -457,14 +469,16 @@ GET {{baseUrl}}/chargers/1
 
 ###
 # Scheduler auto-complete scenario
+### Not: Bu senaryo için startTime geldiğinde scheduler session'ı otomatik başlatır;
+### endTime geçtikten en az 60 saniye sonra session otomatik tamamlanır.
 POST {{baseUrl}}/reservations
 Content-Type: application/json
 
 {
-  "vehicleId": 3,
-  "chargerId": 1,
-  "startTime": "2026-04-25T12:01:30",
-  "endTime": "2026-04-25T12:03:30"
+  "vehicleId": 1,
+  "chargerId": 4,
+  "startTime": "2026-04-30T13:10:00",
+  "endTime": "2026-04-30T13:12:00"
 }
 
 > {%
@@ -522,10 +536,6 @@ GET {{baseUrl}}/vehicles/1
 
 ###
 DELETE {{baseUrl}}/vehicles/1
-
-
-
-
 
 
 
