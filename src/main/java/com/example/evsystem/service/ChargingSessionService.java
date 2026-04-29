@@ -23,7 +23,6 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Transactional
@@ -35,6 +34,8 @@ public class ChargingSessionService {
     private final ReservationRepository reservationRepository;
     private final ChargerRepository chargerRepository;
     private final ReservationService reservationService;
+    private final Float defaultAutoStartBatteryLevel;
+
     public ChargingSessionService(ChargingSessionRepository chargingSessionRepository,
                                   ReservationRepository reservationRepository,
                                   ChargerRepository chargerRepository,
@@ -44,6 +45,7 @@ public class ChargingSessionService {
         this.reservationRepository = reservationRepository;
         this.chargerRepository = chargerRepository;
         this.reservationService = reservationService;
+        this.defaultAutoStartBatteryLevel = autoStartBatteryLevel;
     }
 
     public ChargingSession startSession(Long reservationId, Float startBatteryLevel) {
@@ -178,7 +180,7 @@ public class ChargingSessionService {
     }
 
     private Float generateInitialBatteryLevel() {
-        return (float) ThreadLocalRandom.current().nextInt(0, 31);
+        return defaultAutoStartBatteryLevel;
     }
 
     private Float calculateConsumedKwh(ChargingSession session, Float endBatteryLevel) {

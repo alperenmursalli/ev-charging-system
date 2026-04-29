@@ -18,6 +18,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -63,10 +64,19 @@ class ReservationServiceTest {
     @Test
     void autoExpireMarksElapsedActiveReservations() {
         Reservation reservation = new Reservation();
+        reservation.setVehicle(new com.example.evsystem.entity.Vehicle());
+        reservation.setCharger(new com.example.evsystem.entity.Charger());
         reservation.setStatus(ReservationStatus.ACTIVE);
         reservation.setEndTime(LocalDateTime.now().minusMinutes(1));
+        try {
+            java.lang.reflect.Field idField = Reservation.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(reservation, 5L);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
 
-        when(reservationRepository.findByStatusInAndEndTimeLessThanEqual(List.of(ReservationStatus.ACTIVE), any(LocalDateTime.class)))
+        when(reservationRepository.findByStatusInAndEndTimeLessThanEqual(eq(List.of(ReservationStatus.ACTIVE)), any(LocalDateTime.class)))
                 .thenReturn(List.of(reservation));
         when(chargingSessionRepository.existsByReservationIdAndStatus(any(Long.class), any(ChargingSessionStatus.class)))
                 .thenReturn(false);

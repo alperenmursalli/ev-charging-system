@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{nav.reservations} + ' – EV Charging'">Reservations – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('reservations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div class="flex-between mb-2">
+ <h1 class="page-title" th:text="#{nav.reservations}">Reservations</h1>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary" th:text="#{common.new} + ' ' + #{nav.reservations}">+ New Reservation</a>
+ </div>
+
+<div class="card" th:if="${reservations.isEmpty()}">
+ <p class="text-center text-muted" style="padding:2rem;" th:text="#{reservations.empty}">No reservations yet.</p>
+</div>
+
+<div class="card" th:unless="${reservations.isEmpty()}">
+ <div class="table-wrap">
+ <table>
+ <thead>
+ <tr>
+  <th>ID</th>
+  <th th:text="#{reservations.vehicle}">Vehicle</th>
+  <th th:text="#{reservations.charger}">Charger</th>
+  <th th:text="#{reservations.start}">Start</th>
+  <th th:text="#{reservations.end}">End</th>
+  <th th:text="#{common.status}">Status</th>
+  <th th:text="#{reservations.session}">Session</th>
+  <th th:text="#{common.action}">Action</th>
+ </tr>
+ </thead>
+ <tbody>
+ <tr th:each="r : ${reservations}">
+ <td th:text="${r.id}"></td>
+ <td><span th:text="#{reservations.vehicleShort}">Vehicle</span> #<span th:text="${r.vehicleId}"></span></td>
+ <td>Charger #<span th:text="${r.chargerId}"></span></td>
+ <td th:text="${#temporals.format(r.startTime, 'dd.MM HH:mm')}"></td>
+ <td th:text="${#temporals.format(r.endTime, 'dd.MM HH:mm')}"></td>
+ <td>
+ <span class="badge"
+ th:classappend="${r.status.name() == 'ACTIVE'} ? 'badge-blue' : (${r.status.name() == 'IN_PROGRESS'} ? 'badge-yellow' : (${r.status.name() == 'COMPLETED'} ? 'badge-green' : 'badge-red'))"
+ th:text="${r.status}"></span>
+ </td>
+ <td>
+ <div th:if="${r.sessionId != null}" style="display:flex;flex-direction:column;gap:0.35rem;">
+  <a th:href="@{/ui/sessions/{id}/result(id=${r.sessionId})}" class="btn btn-outline btn-sm" th:text="#{reservations.sessionSummary}">Session Summary</a>
+  <div class="text-muted" style="font-size:0.8rem;" th:if="${r.totalCost != null}">
+   <strong th:text="'₺' + ${r.totalCost}">₺0</strong>
+   <span th:text="' · ' + ${r.consumedKwh} + ' kWh'"> · 0 kWh</span>
+  </div>
+  <span class="badge badge-gray" th:if="${r.sessionStatus != null}" th:text="${r.sessionStatus}">COMPLETED</span>
+ </div>
+ <span th:unless="${r.sessionId != null}" class="text-muted" style="font-size:0.8rem;" th:text="#{reservations.noSession}">No session yet</span>
+ </td>
+ <td>
+ <span th:if="${r.status.name() == 'ACTIVE' and r.sessionId == null}" class="text-muted" style="font-size:0.8rem;" th:text="#{reservations.autoStartPending}">Starts automatically at reservation time</span>
+ <a th:if="${r.status.name() == 'IN_PROGRESS' and r.sessionId != null}"
+ th:href="@{/ui/sessions/{id}/end(id=${r.sessionId})}"
+ class="btn btn-success btn-sm" th:text="#{reservations.openActiveSession}">Open Active Session</a>
+ </td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

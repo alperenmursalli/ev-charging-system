@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{page.stationMap.title} + ' – EV Charging'">Station Map – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+ <meta name="google-maps-api-key" th:content="${@environment.getProperty('google.maps.api-key', '')}"/>
+ <meta name="google-maps-map-id" th:content="${@environment.getProperty('google.maps.map-id', '')}"/>
+ <style>
+ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+ .map-page { display:flex; flex:1; min-height:0; }
+ .map-sidebar {
+ width: 380px;
+ min-width: 340px;
+ background: var(--card-bg);
+ border-right: 1px solid var(--border);
+ overflow-y: auto;
+ display: flex;
+ flex-direction: column;
+ }
+ .map-sidebar-header {
+ padding: 1rem;
+ border-bottom: 1px solid var(--border);
+ background: var(--table-head);
+ }
+ .map-sidebar-header h1 { font-size:1rem; margin-bottom:0.35rem; }
+ .map-sidebar-header p { color: var(--text-muted); font-size:0.82rem; }
+ .map-filters { padding: 1rem; border-bottom: 1px solid var(--border); }
+ .filter-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+ .filter-actions { display:flex; gap:0.6rem; margin-top:0.8rem; }
+ .legend { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.8rem; }
+ .legend-item { display:flex; align-items:center; gap:0.3rem; font-size:0.75rem; color:var(--text-muted); }
+ .station-list { flex:1; overflow-y:auto; }
+ .station-item {
+ padding: 0.95rem 1rem;
+ border-bottom: 1px solid var(--border);
+ cursor: pointer;
+ transition: background 0.15s ease;
+ }
+ .station-item:hover { background: var(--input-bg); }
+ .station-item.selected { background: #dbeafe; }
+ body.dark .station-item.selected { background: #1e3a5f; }
+ .station-name { font-weight:700; font-size:0.92rem; margin-bottom:0.2rem; display:flex; align-items:center; gap:0.4rem; }
+ .station-address { font-size:0.78rem; color: var(--text-muted); margin-bottom:0.45rem; }
+ .station-meta { display:flex; gap:0.4rem; flex-wrap:wrap; }
+ .sidebar-footer { padding:0.85rem 1rem; border-top:1px solid var(--border); display:flex; gap:0.65rem; }
+ .location-debug { padding:0.85rem 1rem; border-top:1px solid var(--border); font-size:0.78rem; color:var(--text-muted); }
+ .location-debug strong { color:var(--text); }
+ .map-main { flex:1; position:relative; min-width:0; }
+ #map { width:100%; height:100%; }
+ .map-empty-state {
+ position:absolute;
+ inset:0;
+ background: var(--bg);
+ z-index:20;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+ padding:2rem;
+ }
+ .map-empty-card {
+ max-width: 420px;
+ background: var(--card-bg);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ padding: 1.5rem;
+ box-shadow: var(--shadow);
+ }
+ .map-empty-card p { color: var(--text-muted); margin:0.75rem 0; }
+ .map-key-row { display:flex; gap:0.6rem; margin-top:1rem; }
+ .detail-panel {
+ position:absolute;
+ top:12px;
+ right:12px;
+ width:360px;
+ max-width:calc(100% - 24px);
+ max-height:calc(100vh - 110px);
+ overflow-y:auto;
+ background: var(--card-bg);
+ border: 1px solid var(--border);
+ border-radius: 16px;
+ box-shadow: var(--shadow);
+ padding: 1.2rem;
+ z-index:10;
+ display:none;
+ }
+ .detail-panel.visible { display:block; }
+ .detail-close {
+ position:absolute;
+ top:10px;
+ right:12px;
+ border:none;
+ background:none;
+ color:var(--text-muted);
+ cursor:pointer;
+ font-size:1.1rem;
+ }
+ .detail-section { margin-top:1rem; }
+ .detail-section h3 { font-size:0.72rem; color:var(--text-muted); margin-bottom:0.5rem; letter-spacing:0.08em; text-transform:uppercase; }
+ .charger-card {
+ border: 1px solid var(--border);
+ border-radius: 12px;
+ padding: 0.8rem;
+ margin-bottom: 0.6rem;
+ background: var(--input-bg);
+ }
+ .charger-card-head { display:flex; justify-content:space-between; gap:0.5rem; margin-bottom:0.45rem; }
+ .charger-code { font-weight:700; font-size:0.85rem; }
+ .charger-meta { display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.6rem; }
+ .charger-actions { display:flex; gap:0.5rem; }
+ .inline-status { min-height: 22px; font-size:0.78rem; color:var(--text-muted); margin-top:0.5rem; }
+ @media (max-width: 960px) {
+  body { height:auto; overflow:auto; }
+  .map-page { flex-direction:column; height:auto; }
+  .map-sidebar { width:100%; min-width:0; border-right:none; border-bottom:1px solid var(--border); }
+  .map-main { min-height:60vh; }
+  .filter-grid { grid-template-columns:1fr; }
+ }
+ </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('map')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+
+<div class="map-page">
+ <aside class="map-sidebar">
+  <div class="map-sidebar-header">
+   <h1 th:text="#{page.stationMap.title}">Station Map</h1>
+   <p th:text="#{stationMap.subtitle}">Filter stations, select on map, get directions.</p>
+   <div class="legend">
+    <span class="legend-item"><span class="dot dot-green"></span><span th:text="#{status.available}">Available</span></span>
+    <span class="legend-item"><span class="dot dot-yellow"></span><span th:text="#{status.occupied}">Occupied</span></span>
+    <span class="legend-item"><span class="dot dot-red"></span>Offline</span>
+   </div>
+  </div>
+
+  <form id="discovery-form" class="map-filters">
+   <div class="filter-grid">
+    <div class="form-group">
+     <label class="form-label" for="connectorType" th:text="#{vehicles.connector}">Connector</label>
+     <select id="connectorType" name="connectorType" class="form-control">
+      <option value="" th:text="#{common.all}">All</option>
+      <option th:each="type : ${connectorTypes}" th:value="${type}" th:text="${type}"></option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="powerOutput" th:text="#{charger.power}">Power</label>
+     <select id="powerOutput" name="powerOutput" class="form-control">
+      <option value="" th:text="#{common.all}">All</option>
+      <option th:each="power : ${powerOutputs}" th:value="${power}" th:text="${power}"></option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="status" th:text="#{common.status}">Status</label>
+     <select id="status" name="status" class="form-control">
+      <option value="" th:text="#{common.all}">All</option>
+      <option th:each="stationStatus : ${stationStatuses}" th:value="${stationStatus}" th:text="${stationStatus}"></option>
+     </select>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="maxPricePerKwh" th:text="#{stationMap.maxPrice}">Max price/kWh</label>
+     <input id="maxPricePerKwh" name="maxPricePerKwh" type="number" min="0" step="0.1" class="form-control" placeholder="12.5"/>
+    </div>
+   </div>
+   <div class="filter-actions">
+    <button type="submit" class="btn btn-primary btn-sm" th:text="#{common.filter}">Filter</button>
+    <button type="button" class="btn btn-outline btn-sm" id="reset-filters" th:text="#{common.reset}">Reset</button>
+   </div>
+   <div class="inline-status" id="filter-status"></div>
+  </form>
+
+  <div class="station-list" id="station-list">
+   <div class="text-muted" style="padding:1rem;text-align:center;" th:text="#{stationMap.loading}">Loading stations...</div>
+  </div>
+
+  <div class="location-debug" id="location-debug" th:text="#{stationMap.locationDebug.empty}">Location not selected yet.</div>
+  <div class="sidebar-footer">
+   <button id="btn-locate" class="btn btn-outline btn-sm" style="flex:1;" th:text="#{stationMap.locate}">Find My Location</button>
+   <button id="btn-adjust-location" class="btn btn-outline btn-sm" type="button" th:text="#{stationMap.adjustLocation}">Adjust Location</button>
+   <button id="clear-route" class="btn btn-outline btn-sm" type="button" th:text="#{stationMap.clearRoute}">Clear Route</button>
+  </div>
+ </aside>
+
+ <main class="map-main">
+  <div class="map-empty-state" id="map-empty-state">
+   <div class="map-empty-card">
+    <h2 th:text="#{stationMap.apiKey.required}">Google Maps API key required</h2>
+    <p th:text="#{stationMap.apiKey.help}">Add the key to application-local.properties or paste it below.</p>
+    <div class="map-key-row">
+      <input id="api-key-input" type="text" class="form-control" placeholder="Google Maps API Key"/>
+      <button id="apply-api-key" class="btn btn-primary btn-sm" type="button" th:text="#{common.load}">Load</button>
+    </div>
+   </div>
+  </div>
+  <div id="map"></div>
+  <section class="detail-panel" id="detail-panel">
+   <button class="detail-close" id="detail-close" type="button">×</button>
+   <div id="detail-content"></div>
+  </section>
+ </main>
+</div>
+
+<script th:inline="javascript">
+  window.stationMapBootstrap = {
+    apiKey: /*[[${@environment.getProperty('google.maps.api-key', '')}]]*/ '',
+    mapId: /*[[${@environment.getProperty('google.maps.map-id', '')}]]*/ '',
+    labels: {
+      available: /*[[#{status.available}]]*/ 'Available',
+      occupied: /*[[#{status.occupied}]]*/ 'Occupied',
+      offline: /*[[#{status.offline}]]*/ 'Offline',
+      loadingStations: /*[[#{stationMap.loading}]]*/ 'Loading stations...',
+      stationsLoadError: /*[[#{stationMap.loadError}]]*/ 'Failed to load stations.',
+      stationsFound: /*[[#{stationMap.found}]]*/ '{0} stations found.',
+      noStationsFound: /*[[#{stationMap.noStations}]]*/ 'No stations matched the filters.',
+      availableCount: /*[[#{stationMap.availableCount}]]*/ '{0}/{1} available',
+      distanceKm: /*[[#{stationMap.distanceKm}]]*/ '{0} km',
+      priceFrom: /*[[#{stationMap.priceFrom}]]*/ 'From ₺{0}/kWh',
+      chargerDetailsError: /*[[#{stationMap.chargerDetailsError}]]*/ 'Failed to fetch charger details.',
+      loadingChargerDetails: /*[[#{stationMap.loadingChargerDetails}]]*/ 'Loading charger details...',
+      detailSection: /*[[#{stationMap.detailSection}]]*/ 'Details',
+      chargerList: /*[[#{stationMap.chargerList}]]*/ 'Charger List',
+      noChargers: /*[[#{stationMap.noChargers}]]*/ 'No chargers found for this station.',
+      stationSection: /*[[#{stationMap.stationSection}]]*/ 'Station',
+      routeSection: /*[[#{stationMap.routeSection}]]*/ 'Route',
+      stationDetailPage: /*[[#{stationMap.stationDetailPage}]]*/ 'Station Page',
+      directions: /*[[#{stationMap.directions}]]*/ 'Directions',
+      openGoogleMaps: /*[[#{stationMap.openGoogleMaps}]]*/ 'Google Maps',
+      reserve: /*[[#{stationMap.reserve}]]*/ 'Reserve',
+      chargerUnavailable: /*[[#{stationMap.chargerUnavailable}]]*/ 'This charger is not available right now.',
+      shareLocationFirst: /*[[#{stationMap.shareLocationFirst}]]*/ 'Share your location first with Find My Location.',
+      routeUnavailable: /*[[#{stationMap.routeUnavailable}]]*/ 'Could not get directions: ',
+      geolocationUnsupported: /*[[#{stationMap.geolocationUnsupported}]]*/ 'Your browser does not support geolocation.',
+      locating: /*[[#{stationMap.locating}]]*/ 'Getting your location...',
+      locationUpdated: /*[[#{stationMap.locationUpdated}]]*/ 'Stations updated for your location.',
+      locationFailed: /*[[#{stationMap.locationFailed}]]*/ 'Could not get your location.',
+      enterApiKey: /*[[#{stationMap.enterApiKey}]]*/ 'Enter an API key.',
+      yourLocation: /*[[#{stationMap.yourLocation}]]*/ 'Your Location',
+      adjustingLocation: /*[[#{stationMap.adjustingLocation}]]*/ 'Drag the blue marker to correct your location.',
+      adjustLocation: /*[[#{stationMap.adjustLocation}]]*/ 'Adjust Location',
+      locationDebugEmpty: /*[[#{stationMap.locationDebug.empty}]]*/ 'Location not selected yet.',
+      locationDebugSet: /*[[#{stationMap.locationDebug.set}]]*/ 'Lat: {0}, Lng: {1}, Accuracy: {2} m'
+    }
+  };
+</script>
+<script defer th:src="@{/js/station-map.js}"></script>
+</body>
+</html>

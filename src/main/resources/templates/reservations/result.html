@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{reservations.result.title} + ' – EV Charging'">Reservation Result – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('reservations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div style="max-width:560px;margin:0 auto;">
+
+ <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
+
+ <div th:if="${reservation}">
+ <!-- Uyumluluk Sonucu -->
+ <div class="card text-center" style="padding:2rem;">
+ <div th:if="${compatible}">
+ <div style="font-size:3rem;"></div>
+ <h2 style="color:#15803d;margin:0.75rem 0 0.5rem;" th:text="#{reservations.compatible}">Compatible</h2>
+ <p class="text-muted" th:text="#{reservations.compatible.desc}">Vehicle and charger connector types match.</p>
+ </div>
+ <div th:unless="${compatible}">
+ <div style="font-size:3rem;"></div>
+ <h2 style="color:#b91c1c;margin:0.75rem 0 0.5rem;" th:text="#{reservations.notCompatible}">Not Compatible</h2>
+ <p class="text-muted" th:text="#{reservations.notCompatible.desc}">Connector types do not match.</p>
+ </div>
+ </div>
+
+ <!-- Rezervasyon Detayları -->
+ <div class="card">
+ <div class="card-header">
+ <span class="card-title" th:text="#{reservations.created}">Reservation Created</span>
+ <span class="badge badge-green" th:text="#{common.success}">Successful</span>
+ </div>
+ <table style="width:100%;font-size:0.9rem;">
+ <tr>
+ <td class="text-muted" style="padding:0.4rem 0;width:45%;">Rezervasyon ID</td>
+ <td><strong>#<span th:text="${reservation.id}"></span></strong></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.4rem 0;">Araç</td>
+ <td>Araç #<span th:text="${reservation.vehicleId}"></span></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.4rem 0;">Charger</td>
+ <td>Charger #<span th:text="${reservation.chargerId}"></span></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.4rem 0;">Başlangıç</td>
+ <td th:text="${#temporals.format(reservation.startTime, 'dd.MM.yyyy HH:mm')}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.4rem 0;">Bitiş</td>
+ <td th:text="${#temporals.format(reservation.endTime, 'dd.MM.yyyy HH:mm')}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.4rem 0;">Durum</td>
+ <td><span class="badge badge-blue" th:text="${reservation.status}"></span></td>
+ </tr>
+ </table>
+ </div>
+
+ <div class="flex gap-1">
+ <span class="btn btn-success" style="pointer-events:none;opacity:0.8;" th:text="#{reservations.autoStartInfo}">Charging will start automatically at reservation time</span>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-outline" th:text="#{common.new} + ' ' + #{nav.reservations}">+ New Reservation</a>
+ <a th:href="@{/ui/reservations}" class="btn btn-outline" th:text="#{common.list}">List</a>
+ </div>
+ </div>
+
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

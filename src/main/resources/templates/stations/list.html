@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{page.stations.title} + ' – EV Charging'">Stations – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('stations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div class="flex-between mb-2">
+ <h1 class="page-title"><span th:text="#{page.stations.title}">Stations</span> <small th:text="#{stations.count(${stations.size()})}">0 stations</small></h1>
+ <a th:href="@{/ui/stations/map}" class="btn btn-primary" th:text="#{stations.viewMap}">View on Map</a>
+ </div>
+
+ <div class="card" th:if="${stations.isEmpty()}">
+ <p class="text-center text-muted" style="padding:2rem;" th:text="#{stations.empty}">No stations added yet.</p>
+ </div>
+
+ <div th:unless="${stations.isEmpty()}">
+ <div th:each="station : ${stations}" class="card" style="cursor:default;">
+ <div class="card-header">
+ <span class="card-title">
+ <span th:if="${station.status.name() == 'AVAILABLE'}"><span class="dot dot-green"></span></span>
+ <span th:if="${station.status.name() == 'OCCUPIED'}"><span class="dot dot-yellow"></span></span>
+ <span th:if="${station.status.name() == 'OFFLINE'}"><span class="dot dot-red"></span></span>
+ <span th:text="${station.name}"></span>
+ </span>
+ <div class="flex gap-1">
+ <span class="badge"
+ th:classappend="${station.status.name() == 'AVAILABLE'} ? 'badge-green' : (${station.status.name() == 'OCCUPIED'} ? 'badge-yellow' : 'badge-red')"
+ th:text="${station.status}"></span>
+ <a th:href="@{/ui/stations/{id}(id=${station.id})}" class="btn btn-outline btn-sm" th:text="#{common.detailsArrow}">Details →</a>
+ </div>
+ </div>
+ <p class="text-muted" style="font-size:0.88rem;"> <span th:text="${station.address}"></span></p>
+ <p class="text-muted mt-1" style="font-size:0.82rem;">
+ <span th:text="#{stations.coordinate}">Coordinates</span>: <code th:text="${station.latitude} + ', ' + ${station.longitude}"></code>
+ </p>
+ <div class="flex gap-1 mt-2">
+ <a th:href="@{/ui/stations/{id}(id=${station.id})}" class="btn btn-outline btn-sm" th:text="#{stations.viewChargers}">View Chargers</a>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-primary btn-sm" th:text="#{stations.makeReservation}">Make Reservation</a>
+ </div>
+ </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

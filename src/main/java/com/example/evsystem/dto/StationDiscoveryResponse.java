@@ -24,6 +24,7 @@ public class StationDiscoveryResponse {
     private List<ConnectorType> connectorTypes;
     private List<PowerOutput> powerOutputs;
     private Double distanceKm;
+    private List<ChargerSummary> chargers;
 
     public static StationDiscoveryResponse from(Station station, Double userLatitude, Double userLongitude) {
         StationDiscoveryResponse response = new StationDiscoveryResponse();
@@ -52,6 +53,9 @@ public class StationDiscoveryResponse {
                 .map(Charger::getPowerOutput)
                 .filter(java.util.Objects::nonNull)
                 .distinct()
+                .toList();
+        response.chargers = chargers.stream()
+                .map(ChargerSummary::from)
                 .toList();
 
         if (userLatitude != null && userLongitude != null) {
@@ -131,5 +135,59 @@ public class StationDiscoveryResponse {
 
     public Double getDistanceKm() {
         return distanceKm;
+    }
+
+    public List<ChargerSummary> getChargers() {
+        return chargers;
+    }
+
+    public static class ChargerSummary {
+        private Long id;
+        private String chargerCode;
+        private String chargerType;
+        private PowerOutput powerOutput;
+        private ConnectorType connectorType;
+        private Float pricePerKwh;
+        private ChargerStatus status;
+
+        public static ChargerSummary from(Charger charger) {
+            ChargerSummary summary = new ChargerSummary();
+            summary.id = charger.getId();
+            summary.chargerCode = charger.getChargerCode();
+            summary.chargerType = charger.getChargerType() != null ? charger.getChargerType().name() : null;
+            summary.powerOutput = charger.getPowerOutput();
+            summary.connectorType = charger.getConnectorType();
+            summary.pricePerKwh = charger.getPricePerKwh();
+            summary.status = charger.getStatus();
+            return summary;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public String getChargerCode() {
+            return chargerCode;
+        }
+
+        public String getChargerType() {
+            return chargerType;
+        }
+
+        public PowerOutput getPowerOutput() {
+            return powerOutput;
+        }
+
+        public ConnectorType getConnectorType() {
+            return connectorType;
+        }
+
+        public Float getPricePerKwh() {
+            return pricePerKwh;
+        }
+
+        public ChargerStatus getStatus() {
+            return status;
+        }
     }
 }

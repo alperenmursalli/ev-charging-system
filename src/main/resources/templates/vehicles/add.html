@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{vehicles.add.title} + ' – EV Charging'">Add Vehicle – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('vehicles')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div style="max-width:560px;margin:0 auto;">
+ <div class="flex-between mb-2">
+ <h1 class="page-title" th:text="#{vehicles.add.title}">Add Vehicle</h1>
+ <a th:href="@{/ui/vehicles}" class="btn btn-outline btn-sm" th:text="#{common.back}">← Back</a>
+ </div>
+
+ <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
+
+ <div class="card">
+ <form th:action="@{/ui/vehicles/add}" method="post" th:object="${vehicle}">
+
+ <div class="grid-2">
+ <div class="form-group">
+ <label class="form-label" th:text="#{vehicles.brand} + ' *'">Brand *</label>
+ <input type="text" class="form-control" th:field="*{brand}" placeholder="Tesla, BMW, Audi..."/>
+ <div class="error-msg" th:if="${#fields.hasErrors('brand')}" th:errors="*{brand}"></div>
+ </div>
+ <div class="form-group">
+ <label class="form-label" th:text="#{vehicles.model} + ' *'">Model *</label>
+ <input type="text" class="form-control" th:field="*{model}" placeholder="Model 3, i3, e-tron..."/>
+ <div class="error-msg" th:if="${#fields.hasErrors('model')}" th:errors="*{model}"></div>
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label" th:text="#{vehicles.battery} + ' (kWh) *'">Battery Capacity (kWh) *</label>
+ <input type="number" class="form-control" th:field="*{batteryCapacity}" placeholder="75" step="0.1" min="1"/>
+ <div class="form-hint" th:text="#{vehicles.add.batteryHint}">Your vehicle's total battery capacity</div>
+ <div class="error-msg" th:if="${#fields.hasErrors('batteryCapacity')}" th:errors="*{batteryCapacity}"></div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label" th:text="#{vehicles.connector} + ' *'">Connector Type *</label>
+ <select class="form-control" th:field="*{connectorType}">
+ <option value="" th:text="#{common.select}">Select...</option>
+ <option th:each="ct : ${connectorTypes}" th:value="${ct}" th:text="${ct}"></option>
+ </select>
+ <div class="form-hint" th:text="#{vehicles.add.connectorHint}">CCS, TYPE2, CHADEMO</div>
+ <div class="error-msg" th:if="${#fields.hasErrors('connectorType')}" th:errors="*{connectorType}"></div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label" th:text="#{vehicles.plate} + ' *'">Plate Number *</label>
+ <input type="text" class="form-control" th:field="*{plateNumber}" placeholder="34ABC123" style="text-transform:uppercase;"/>
+ <div class="form-hint" th:text="#{vehicles.add.plateHint}">Unique uppercase plate number</div>
+ <div class="error-msg" th:if="${#fields.hasErrors('plateNumber')}" th:errors="*{plateNumber}"></div>
+ </div>
+
+ <div class="flex gap-1 mt-2">
+ <button type="submit" class="btn btn-primary" th:text="#{vehicles.add.button}">Add Vehicle</button>
+ <a th:href="@{/ui/vehicles}" class="btn btn-outline" th:text="#{common.cancel}">Cancel</a>
+ </div>
+ </form>
+ </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

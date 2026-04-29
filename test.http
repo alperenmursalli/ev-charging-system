@@ -173,6 +173,15 @@ Content-Type: application/json
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
+{
+  "chargerCode": "DC-50-01",
+  "chargerType": "DC",
+  "powerOutput": "KW_50",
+  "connectorType": "CCS",
+  "pricePerKwh": 4.0,
+  "status": "AVAILABLE",
+  "stationId": 1
+}
 
 {"chargerCode": "AC-22-02", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 1 }}
 ###
@@ -190,6 +199,15 @@ Content-Type: application/json
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
+{
+  "chargerCode": "AC-22-01",
+  "chargerType": "AC",
+  "powerOutput": "KW_22",
+  "connectorType": "TYPE2",
+  "pricePerKwh": 3.0,
+  "status": "AVAILABLE",
+  "stationId": 2
+}
 
 {"chargerCode": "DC-50-B2", "chargerType": "DC", "powerOutput": "KW_50", "connectorType": "CCS", "pricePerKwh": 4.0, "status": "AVAILABLE", "station": { "id": 2 }}
 ###
@@ -200,6 +218,15 @@ Content-Type: application/json
 ###
 POST {{baseUrl}}/chargers
 Content-Type: application/json
+{
+  "chargerCode": "DC-150-01",
+  "chargerType": "DC",
+  "powerOutput": "KW_150",
+  "connectorType": "CHADEMO",
+  "pricePerKwh": 5.0,
+  "status": "OFFLINE",
+  "stationId": 3
+}
 
 {"chargerCode": "AC-22-B2", "chargerType": "AC", "powerOutput": "KW_22", "connectorType": "TYPE2", "pricePerKwh": 3.0, "status": "AVAILABLE", "station": { "id": 2 }}
 ###
@@ -365,6 +392,8 @@ Content-Type: application/json
   "chargerId": 1,
   "startTime": "2026-06-20T10:00:00",
   "endTime": "2026-06-20T13:00:00"
+  "startTime": "2026-04-28T14:00:00",
+  "endTime": "2026-04-28T16:00:00"
 }
 
 ###
@@ -378,6 +407,9 @@ Content-Type: application/json
   "chargerId": 2,
   "startTime": "2026-06-25T14:00:00",
   "endTime": "2026-06-25T15:00:00"
+  "chargerId": 1,
+  "startTime": "2026-04-28T12:37:00",
+  "endTime": "2026-04-28T12:39:00"
 }
 
 ###

@@ -80,7 +80,9 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationResponse> getAllResponses() {
         return reservationRepository.findAll().stream()
-                .map(ReservationResponse::from)
+                .map(reservation -> ReservationResponse.from(
+                        reservation,
+                        chargingSessionRepository.findTopByReservation_IdOrderByStartedAtDescIdDesc(reservation.getId()).orElse(null)))
                 .toList();
     }
 
@@ -88,7 +90,9 @@ public class ReservationService {
     public ReservationResponse getResponseById(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
-        return ReservationResponse.from(reservation);
+        return ReservationResponse.from(
+                reservation,
+                chargingSessionRepository.findTopByReservation_IdOrderByStartedAtDescIdDesc(id).orElse(null));
     }
 
     private void validateTimes(LocalDateTime startTime, LocalDateTime endTime) {

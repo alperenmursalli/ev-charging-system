@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{sessions.start.title} + ' – EV Charging'">Start Charging – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('sessions')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div style="max-width:520px;margin:0 auto;">
+ <div class="flex-between mb-2">
+ <h1 class="page-title" th:text="#{sessions.start.title}">Start Charging</h1>
+ <a th:href="@{/ui/reservations}" class="btn btn-outline btn-sm" th:text="#{common.back}">← Back</a>
+ </div>
+
+ <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
+
+ <div class="card">
+ <form th:action="@{/ui/sessions/start}" method="post">
+
+ <div class="form-group">
+ <label class="form-label" th:text="#{nav.reservations} + ' *'">Reservation *</label>
+ <select name="reservationId" class="form-control" required>
+ <option value="">Rezervasyon seçin...</option>
+ <option th:each="r : ${reservations}"
+ th:value="${r.id}"
+ th:selected="${r.id == selectedReservationId}"
+ th:if="${r.status.name() == 'ACTIVE' or r.status.name() == 'IN_PROGRESS'}"
+ th:text="'Rezervasyon #' + ${r.id} + ' – Araç #' + ${r.vehicleId} + ' – Charger #' + ${r.chargerId} + ' (' + ${r.status} + ')'"></option>
+ </select>
+ <div class="form-hint">Yalnızca ACTIVE veya IN_PROGRESS rezervasyonlar gösterilir</div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Başlangıç Batarya Seviyesi (%)</label>
+ <input type="number" name="startBatteryLevel" class="form-control"
+ placeholder="Boş bırakırsanız son bilinen değer kullanılır"
+ min="0" max="100" step="0.1"/>
+ <div class="form-hint">0-100 arası bir değer girin veya boş bırakın (otomatik algılanır)</div>
+ </div>
+
+ <div class="flex gap-1 mt-2">
+ <button type="submit" class="btn btn-success" th:text="#{sessions.start.button}">Start Charging</button>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-outline" th:text="#{sessions.start.makeReservationFirst}">Create Reservation First</a>
+ </div>
+ </form>
+ </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>

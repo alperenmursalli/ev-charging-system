@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title th:text="#{sessions.result.title} + ' – EV Charging'">Charging Result – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: navbar('sessions')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div style="max-width:580px;margin:0 auto;">
+ <h1 class="page-title" th:text="#{sessions.result.title}">Charging Completed</h1>
+
+ <div th:if="${chargingSession}">
+ <!-- Maliyet Özeti -->
+ <div class="cost-summary">
+ <div class="cost-label">TOTAL</div>
+ <div class="cost-big">₺<span th:text="${chargingSession.totalCost}"></span></div>
+ <div class="cost-meta">
+ <div class="cost-meta-item">
+ <div class="val" th:text="${chargingSession.consumedKwh} + ' kWh'"></div>
+ <div class="lbl">Consumed Energy</div>
+ </div>
+ <div class="cost-meta-item">
+ <div class="val">₺<span th:text="${chargingSession.unitPricePerKwh != null ? chargingSession.unitPricePerKwh : '–'}"></span>/kWh</div>
+ <div class="lbl">Unit Price</div>
+ </div>
+ <div class="cost-meta-item" th:if="${chargingSession.chargedPercentage != null}">
+ <div class="val" th:text="${'+' + #numbers.formatDecimal(chargingSession.chargedPercentage, 1, 2) + '%'}"></div>
+ <div class="lbl">Battery Gain</div>
+ </div>
+ </div>
+ </div>
+
+ <!-- Detay Tablosu -->
+ <div class="card">
+ <div class="card-header">
+ <span class="card-title"> Session Details</span>
+ <span class="badge badge-green" th:text="${chargingSession.status}"></span>
+ </div>
+
+ <!-- Batarya görseli -->
+ <div style="margin-bottom:1rem;">
+ <div class="flex-between" style="font-size:0.82rem;margin-bottom:0.3rem;">
+ <span class="text-muted">Battery</span>
+ <span th:text="${chargingSession.startBatteryLevel + '% → ' + chargingSession.endBatteryLevel + '%'}"></span>
+ </div>
+ <div class="battery-bar" style="height:18px;">
+ <div class="battery-fill" th:style="'width:' + ${chargingSession.endBatteryLevel} + '%'"></div>
+ </div>
+ </div>
+
+ <table style="width:100%;font-size:0.9rem;">
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;width:50%;">Session ID</td>
+ <td><strong>#<span th:text="${chargingSession.id}"></span></strong></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">Reservation</td>
+ <td>#<span th:text="${chargingSession.reservationId}"></span></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">Start</td>
+ <td th:text="${chargingSession.startBatteryLevel + '% (' + chargingSession.startEnergyKwh + ' kWh)'}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">End</td>
+ <td th:text="${chargingSession.endBatteryLevel + '% (' + chargingSession.endEnergyKwh + ' kWh)'}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">Consumed</td>
+ <td><strong th:text="${chargingSession.consumedKwh} + ' kWh'"></strong></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">Date</td>
+ <td th:text="${chargingSession.reservationStartTime != null ? #temporals.format(chargingSession.reservationStartTime, 'MMMM d, yyyy') : '–'}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">Time</td>
+ <td th:text="${chargingSession.reservationStartTime != null and chargingSession.reservationEndTime != null ? #temporals.format(chargingSession.reservationStartTime, 'HH:mm') + ' - ' + #temporals.format(chargingSession.reservationEndTime, 'HH:mm') : '–'}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">Unit Price</td>
+ <td th:text="${chargingSession.unitPricePerKwh != null ? '₺' + chargingSession.unitPricePerKwh + '/kWh' : '–'}"></td>
+ </tr>
+ <tr>
+ <td class="text-muted" style="padding:0.35rem 0;">TOTAL</td>
+ <td><strong style="color:#1d4ed8;" th:text="${'₺' + chargingSession.totalCost}"></strong></td>
+ </tr>
+ </table>
+ </div>
+
+ <div class="flex gap-1">
+ <a th:href="@{/ui/home}" class="btn btn-primary" th:text="#{nav.home}">Home</a>
+ <a th:href="@{/ui/reservations/create}" class="btn btn-outline" th:text="#{common.new} + ' ' + #{nav.reservations}">+ New Reservation</a>
+ </div>
+ </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>
