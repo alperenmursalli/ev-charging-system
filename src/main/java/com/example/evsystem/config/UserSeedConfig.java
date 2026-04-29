@@ -14,13 +14,13 @@ public class UserSeedConfig {
     ApplicationRunner userSeedRunner(
             AppUserService appUserService,
             @Value("${app.security.seed-admin-username:admin}") String adminUsername,
-            @Value("${app.security.seed-admin-password:admin123}") String adminPassword,
-            @Value("${app.security.seed-user-username:user}") String userUsername,
-            @Value("${app.security.seed-user-password:user123}") String userPassword
+            @Value("${app.security.seed-admin-password:}") String adminPassword
     ) {
         return args -> {
+            if (adminPassword == null || adminPassword.isBlank()) {
+                throw new IllegalStateException("app.security.seed-admin-password must be configured.");
+            }
             appUserService.createSeedUserIfMissing(adminUsername, adminPassword, UserRole.ROLE_ADMIN);
-            appUserService.createSeedUserIfMissing(userUsername, userPassword, UserRole.ROLE_USER);
         };
     }
 }

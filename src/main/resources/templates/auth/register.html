@@ -7,7 +7,6 @@
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 </head>
 <body>
-<th:block th:replace="~{fragments/layout :: navbar('home')}"></th:block>
 <th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
 <div class="page-wrapper">
  <div style="max-width:480px;margin:2rem auto;">
@@ -36,6 +35,7 @@
     <div class="flex gap-1 mt-2">
       <button type="submit" class="btn btn-primary">Register</button>
       <a th:href="@{/ui/login}" class="btn btn-outline">Back to Login</a>
+      <a th:href="@{/ui/home}" class="btn btn-outline">Home</a>
     </div>
    </form>
   </div>
