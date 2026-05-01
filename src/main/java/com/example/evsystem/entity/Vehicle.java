@@ -11,6 +11,10 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private AppUser owner;
+
     @NotBlank(message = "Can't be blank")
     private String brand;
 
@@ -29,6 +33,9 @@ public class Vehicle {
     private String plateNumber;
 
     public Long getId() { return id; }
+
+    public AppUser getOwner() { return owner; }
+    public void setOwner(AppUser owner) { this.owner = owner; }
 
     public String getBrand() { return brand; }
     public void setBrand(String brand) { this.brand = brand; }

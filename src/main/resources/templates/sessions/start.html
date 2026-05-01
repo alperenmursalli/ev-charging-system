@@ -20,6 +20,7 @@
 
  <div class="card">
  <form th:action="@{/ui/sessions/start}" method="post">
+ <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
  <div class="form-group">
  <label class="form-label" th:text="#{nav.reservations} + ' *'">Reservation *</label>

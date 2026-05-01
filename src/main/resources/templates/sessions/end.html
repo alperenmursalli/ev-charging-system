@@ -54,6 +54,7 @@
  <!-- Bitiş formu -->
  <div class="card">
  <form th:action="@{/ui/sessions/{id}/end(id=${chargingSession.id})}" method="post">
+ <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
  <div class="form-group">
  <label class="form-label">Bitiş Batarya Seviyesi (%) *</label>
  <input type="number" name="endBatteryLevel" class="form-control" required

@@ -1,6 +1,7 @@
 package com.example.evsystem.service;
 
 import com.example.evsystem.dto.CreateReservationRequest;
+import com.example.evsystem.entity.AppUser;
 import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.Reservation;
 import com.example.evsystem.entity.Vehicle;
@@ -9,6 +10,7 @@ import com.example.evsystem.enums.ChargingSessionStatus;
 import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.PowerOutput;
 import com.example.evsystem.enums.ReservationStatus;
+import com.example.evsystem.enums.UserRole;
 import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
 import com.example.evsystem.repository.ChargingSessionRepository;
@@ -33,6 +35,7 @@ class ReservationServiceTest {
     private VehicleRepository vehicleRepository;
     private ChargerRepository chargerRepository;
     private ChargingSessionRepository chargingSessionRepository;
+    private CurrentUserService currentUserService;
     private ReservationService reservationService;
 
     // --- Helper builder methods ---
@@ -72,8 +75,11 @@ class ReservationServiceTest {
         vehicleRepository = mock(VehicleRepository.class);
         chargerRepository = mock(ChargerRepository.class);
         chargingSessionRepository = mock(ChargingSessionRepository.class);
+        currentUserService = mock(CurrentUserService.class);
+        when(currentUserService.isCurrentUserAdmin()).thenReturn(false);
+        when(currentUserService.getCurrentUsername()).thenReturn(Optional.empty());
         reservationService = new ReservationService(
-                reservationRepository, vehicleRepository, chargerRepository, chargingSessionRepository, 24
+                reservationRepository, vehicleRepository, chargerRepository, chargingSessionRepository, currentUserService, 24
         );
     }
 
@@ -205,6 +211,31 @@ class ReservationServiceTest {
                 () -> reservationService.create(buildRequest(1L, 1L, start, end)));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldHideVehicle_whenReservationVehicleBelongsToAnotherUser() {
+        AppUser owner = new AppUser();
+        owner.setUsername("bob");
+        owner.setPasswordHash("hash");
+        owner.setRole(UserRole.ROLE_USER);
+
+        Vehicle vehicle = buildVehicle(ConnectorType.TYPE2);
+        vehicle.setOwner(owner);
+        Charger charger = buildCharger(ConnectorType.TYPE2, ChargerStatus.AVAILABLE);
+
+        LocalDateTime start = LocalDateTime.now().plusMinutes(10);
+        LocalDateTime end = start.plusHours(1);
+
+        when(currentUserService.getCurrentUsername()).thenReturn(Optional.of("alice"));
+        when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
+        when(chargerRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(charger));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> reservationService.create(buildRequest(1L, 1L, start, end)));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         verify(reservationRepository, never()).save(any());
     }
 

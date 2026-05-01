@@ -6,6 +6,8 @@ import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.Station;
 import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
+import com.example.evsystem.repository.ChargingSessionRepository;
+import com.example.evsystem.repository.ReservationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +20,17 @@ public class ChargerService {
 
     private final ChargerRepository chargerRepository;
     private final StationService stationService;
+    private final ReservationRepository reservationRepository;
+    private final ChargingSessionRepository chargingSessionRepository;
 
-    public ChargerService(ChargerRepository chargerRepository, StationService stationService) {
+    public ChargerService(ChargerRepository chargerRepository,
+                          StationService stationService,
+                          ReservationRepository reservationRepository,
+                          ChargingSessionRepository chargingSessionRepository) {
         this.chargerRepository = chargerRepository;
         this.stationService = stationService;
+        this.reservationRepository = reservationRepository;
+        this.chargingSessionRepository = chargingSessionRepository;
     }
 
     public Charger save(ChargerRequest request) {
@@ -85,6 +94,9 @@ public class ChargerService {
 
     public void delete(Long id) {
         getById(id);
+        if (reservationRepository.existsByChargerId(id) || chargingSessionRepository.existsByReservation_Charger_Id(id)) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Charger with reservation or charging session history cannot be deleted.");
+        }
         chargerRepository.deleteById(id);
     }
 }

@@ -34,23 +34,27 @@ public class ChargingSessionService {
     private final ReservationRepository reservationRepository;
     private final ChargerRepository chargerRepository;
     private final ReservationService reservationService;
+    private final CurrentUserService currentUserService;
     private final Float defaultAutoStartBatteryLevel;
 
     public ChargingSessionService(ChargingSessionRepository chargingSessionRepository,
                                   ReservationRepository reservationRepository,
                                   ChargerRepository chargerRepository,
                                   ReservationService reservationService,
+                                  CurrentUserService currentUserService,
                                   @Value("${charging.session.auto-start-battery-level:20}") Float autoStartBatteryLevel) {
         this.chargingSessionRepository = chargingSessionRepository;
         this.reservationRepository = reservationRepository;
         this.chargerRepository = chargerRepository;
         this.reservationService = reservationService;
+        this.currentUserService = currentUserService;
         this.defaultAutoStartBatteryLevel = autoStartBatteryLevel;
     }
 
     public ChargingSession startSession(Long reservationId, Float startBatteryLevel) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation could not be found: " + reservationId));
+        validateReservationOwnership(reservation);
         Float resolvedStartBatteryLevel = resolveStartBatteryLevel(reservation, startBatteryLevel);
         validateBatteryLevel(resolvedStartBatteryLevel, "Start battery level");
         validateReservationWindow(reservation);
@@ -88,6 +92,7 @@ public class ChargingSessionService {
     public ChargingSession endSession(Long sessionId, Float endBatteryLevel) {
         ChargingSession session = chargingSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Session could not be found: " + sessionId));
+        validateReservationOwnership(session.getReservation());
         if (session.getStatus() != ChargingSessionStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.CONFLICT, "Session is not active.");
         }
@@ -135,13 +140,33 @@ public class ChargingSessionService {
 
     @Transactional(readOnly = true)
     public List<ChargingSession> getAllSessions() {
+        if (!currentUserService.isCurrentUserAdmin()) {
+            return currentUserService.getCurrentUsername()
+                    .map(chargingSessionRepository::findByReservation_Vehicle_Owner_UsernameIgnoreCase)
+                    .orElseGet(chargingSessionRepository::findAll);
+        }
         return chargingSessionRepository.findAll();
     }
 
     @Transactional(readOnly = true)
     public ChargingSession getSessionById(Long id) {
-        return chargingSessionRepository.findById(id)
+        ChargingSession session = chargingSessionRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Session could not be found: " + id));
+        validateReservationOwnership(session.getReservation());
+        return session;
+    }
+
+    private void validateReservationOwnership(Reservation reservation) {
+        if (currentUserService.isCurrentUserAdmin() || currentUserService.getCurrentUsername().isEmpty()) {
+            return;
+        }
+
+        String username = currentUserService.getCurrentUsername().get();
+        if (reservation.getVehicle() == null ||
+                reservation.getVehicle().getOwner() == null ||
+                !reservation.getVehicle().getOwner().getUsername().equalsIgnoreCase(username)) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, "Session could not be found.");
+        }
     }
 
     private ChargingSession completeSession(ChargingSession session, Float endBatteryLevel, Float consumedKwh, LocalDateTime endedAt) {

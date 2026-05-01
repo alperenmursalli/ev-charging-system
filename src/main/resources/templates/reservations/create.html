@@ -273,6 +273,7 @@
 
  <div class="form-body">
  <form th:action="@{/ui/reservations/create}" method="post" id="resForm">
+ <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
  <input type="hidden" name="startTime" id="startTimeHidden"/>
  <input type="hidden" name="endTime" id="endTimeHidden"/>
 
