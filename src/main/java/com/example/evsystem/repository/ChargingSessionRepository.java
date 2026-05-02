@@ -14,8 +14,13 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     Optional<ChargingSession> findByReservationIdAndStatus(Long reservationId, ChargingSessionStatus status);
     boolean existsByReservationIdAndStatus(Long reservationId, ChargingSessionStatus status);
     boolean existsByReservationId(Long reservationId);
+    boolean existsByReservation_Vehicle_Id(Long vehicleId);
+    boolean existsByReservation_Charger_Id(Long chargerId);
+    boolean existsByReservation_Charger_Station_Id(Long stationId);
     boolean existsByReservation_Charger_IdAndStatus(Long chargerId, ChargingSessionStatus status);
     List<ChargingSession> findByReservation_Vehicle_Id(Long vehicleId);
+    @EntityGraph(attributePaths = {"reservation", "reservation.charger", "reservation.vehicle"})
+    List<ChargingSession> findByReservation_Vehicle_Owner_UsernameIgnoreCase(String username);
     List<ChargingSession> findByReservation_Charger_Id(Long chargerId);
     Optional<ChargingSession> findTopByReservation_IdOrderByStartedAtDescIdDesc(Long reservationId);
     Optional<ChargingSession> findTopByReservation_Vehicle_IdOrderByStartedAtDescIdDesc(Long vehicleId);

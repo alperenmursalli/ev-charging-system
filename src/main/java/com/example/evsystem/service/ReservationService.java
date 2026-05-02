@@ -37,6 +37,7 @@ public class ReservationService {
     private final VehicleRepository vehicleRepository;
     private final ChargerRepository chargerRepository;
     private final ChargingSessionRepository chargingSessionRepository;
+    private final CurrentUserService currentUserService;
     private final Duration autoDeleteRetention;
 
     public ReservationService(
@@ -44,12 +45,14 @@ public class ReservationService {
             VehicleRepository vehicleRepository,
             ChargerRepository chargerRepository,
             ChargingSessionRepository chargingSessionRepository,
+            CurrentUserService currentUserService,
             @Value("${reservation.auto-delete-retention-hours:24}") long autoDeleteRetentionHours
     ) {
         this.reservationRepository = reservationRepository;
         this.vehicleRepository = vehicleRepository;
         this.chargerRepository = chargerRepository;
         this.chargingSessionRepository = chargingSessionRepository;
+        this.currentUserService = currentUserService;
         this.autoDeleteRetention = Duration.ofHours(autoDeleteRetentionHours);
     }
 
@@ -59,6 +62,7 @@ public class ReservationService {
         Charger charger = chargerRepository.findByIdForUpdate(request.getChargerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Charger not found."));
 
+        validateVehicleOwnership(vehicle);
         validateTimes(request.getStartTime(), request.getEndTime());
         validateConnectorCompatibility(vehicle, charger);
         validateChargerAvailability(charger);
@@ -79,7 +83,13 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public List<ReservationResponse> getAllResponses() {
-        return reservationRepository.findAll().stream()
+        List<Reservation> reservations = currentUserService.isCurrentUserAdmin()
+                ? reservationRepository.findAll()
+                : currentUserService.getCurrentUsername()
+                        .map(reservationRepository::findByVehicleOwnerUsernameIgnoreCase)
+                        .orElseGet(reservationRepository::findAll);
+
+        return reservations.stream()
                 .map(reservation -> ReservationResponse.from(
                         reservation,
                         chargingSessionRepository.findTopByReservation_IdOrderByStartedAtDescIdDesc(reservation.getId()).orElse(null)))
@@ -90,6 +100,7 @@ public class ReservationService {
     public ReservationResponse getResponseById(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
+        validateReservationOwnership(reservation);
         return ReservationResponse.from(
                 reservation,
                 chargingSessionRepository.findTopByReservation_IdOrderByStartedAtDescIdDesc(id).orElse(null));
@@ -118,6 +129,7 @@ public class ReservationService {
     public void cancel(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
+        validateReservationOwnership(reservation);
 
         if (reservation.getStatus() == ReservationStatus.CANCELLED) {
             throw new BusinessException(HttpStatus.CONFLICT, "Reservation is already cancelled.");
@@ -143,6 +155,7 @@ public class ReservationService {
     public void delete(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found."));
+        validateReservationOwnership(reservation);
 
         if (reservation.getStatus() == ReservationStatus.IN_PROGRESS ||
                 chargingSessionRepository.existsByReservationIdAndStatus(id, com.example.evsystem.enums.ChargingSessionStatus.ACTIVE)) {
@@ -236,6 +249,29 @@ public class ReservationService {
 
         if (charger.getStatus() != ChargerStatus.AVAILABLE) {
             throw new BusinessException(HttpStatus.CONFLICT, "Reservations can only be created for available chargers.");
+        }
+    }
+
+    private void validateVehicleOwnership(Vehicle vehicle) {
+        if (currentUserService.isCurrentUserAdmin() || currentUserService.getCurrentUsername().isEmpty()) {
+            return;
+        }
+
+        String username = currentUserService.getCurrentUsername().get();
+        if (vehicle.getOwner() == null || !vehicle.getOwner().getUsername().equalsIgnoreCase(username)) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, "Vehicle not found.");
+        }
+    }
+
+    private void validateReservationOwnership(Reservation reservation) {
+        if (currentUserService.isCurrentUserAdmin() || currentUserService.getCurrentUsername().isEmpty()) {
+            return;
+        }
+
+        String username = currentUserService.getCurrentUsername().get();
+        Vehicle vehicle = reservation.getVehicle();
+        if (vehicle == null || vehicle.getOwner() == null || !vehicle.getOwner().getUsername().equalsIgnoreCase(username)) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, "Reservation not found.");
         }
     }
 

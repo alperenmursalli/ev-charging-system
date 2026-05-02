@@ -8,6 +8,9 @@ import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.PowerOutput;
 import com.example.evsystem.enums.StationStatus;
 import com.example.evsystem.exception.BusinessException;
+import com.example.evsystem.repository.ChargerRepository;
+import com.example.evsystem.repository.ChargingSessionRepository;
+import com.example.evsystem.repository.ReservationRepository;
 import com.example.evsystem.repository.StationRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,9 +24,18 @@ import java.util.List;
 public class StationService {
 
     private final StationRepository stationRepository;
+    private final ChargerRepository chargerRepository;
+    private final ReservationRepository reservationRepository;
+    private final ChargingSessionRepository chargingSessionRepository;
 
-    public StationService(StationRepository stationRepository) {
+    public StationService(StationRepository stationRepository,
+                          ChargerRepository chargerRepository,
+                          ReservationRepository reservationRepository,
+                          ChargingSessionRepository chargingSessionRepository) {
         this.stationRepository = stationRepository;
+        this.chargerRepository = chargerRepository;
+        this.reservationRepository = reservationRepository;
+        this.chargingSessionRepository = chargingSessionRepository;
     }
 
     public Station save(StationRequest request) {
@@ -100,6 +112,11 @@ public class StationService {
 
     public void delete(Long id) {
         getById(id);
+        if (reservationRepository.existsByChargerStationId(id) ||
+                chargingSessionRepository.existsByReservation_Charger_Station_Id(id) ||
+                !chargerRepository.findByStationId(id).isEmpty()) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Station with chargers, reservations, or charging session history cannot be deleted.");
+        }
         stationRepository.deleteById(id);
     }
 }

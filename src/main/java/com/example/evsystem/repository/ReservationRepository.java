@@ -18,6 +18,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             LocalDateTime startTime
     );
 
+    boolean existsByVehicleId(Long vehicleId);
+    boolean existsByChargerId(Long chargerId);
+    boolean existsByChargerStationId(Long stationId);
+
+    @EntityGraph(attributePaths = {"vehicle", "charger"})
+    List<Reservation> findByVehicleOwnerUsernameIgnoreCase(String username);
+
     @EntityGraph(attributePaths = {"vehicle", "charger"})
     List<Reservation> findByStatusAndStartTimeLessThanEqualAndEndTimeGreaterThan(
             ReservationStatus status,
