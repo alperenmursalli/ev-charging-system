@@ -22,7 +22,8 @@ public class SecurityConfig {
                         "/stations/**",
                         "/chargers/**",
                         "/reservations/**",
-                        "/sessions/**"
+                        "/sessions/**",
+                        "/ui/logout"
                 ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/error", "/favicon.ico", "/ui/home", "/ui/login", "/ui/register", "/css/**", "/js/**").permitAll()
@@ -43,6 +44,9 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/ui/logout")
                         .logoutSuccessUrl("/ui/login?logout")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
                 )
                 .httpBasic(Customizer.withDefaults());
 

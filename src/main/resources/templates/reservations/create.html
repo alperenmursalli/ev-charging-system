@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
- <title>Rezervasyon Oluştur – EV Charging</title>
+ <title th:text="#{reservations.create.title} + ' – EV Charging'">Create Reservation – EV Charging</title>
  <link rel="stylesheet" th:href="@{/css/style.css}"/>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
  <style>
@@ -209,41 +209,8 @@
  </style>
 </head>
 <body>
-<nav class="navbar">
- <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
- <div class="navbar-links">
- <a th:href="@{/ui/home}">Ana Sayfa</a>
- <a th:href="@{/ui/vehicles}">Araçlar</a>
- <a th:href="@{/ui/stations}">İstasyonlar</a>
- <a th:href="@{/ui/stations/map}"> Harita</a>
- <a th:href="@{/ui/reservations}" class="active">Rezervasyonlar</a>
- <a th:href="@{/ui/sessions/start}">Şarj Et</a>
- <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
- <span id="darkIcon"></span>
- <span class="toggle-label" id="darkLabel">Dark</span>
- </button>
- </div>
-</nav>
-<script>
- (function(){
- var d = localStorage.getItem("evDark");
- if(d === "1") { document.body.classList.add("dark"); }
- })();
- function toggleDark() {
- var on = document.body.classList.toggle("dark");
- localStorage.setItem("evDark", on ? "1" : "0");
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
- window.addEventListener("DOMContentLoaded", function(){
- var on = document.body.classList.contains("dark");
- var btn = document.getElementById("darkBtn");
- if(btn){
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
- });
-</script>
+<th:block th:replace="~{fragments/layout :: navbar('reservations')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
 
 <div class="page-wrapper">
  <div class="page-shell">
@@ -251,10 +218,10 @@
  <!-- Üst başlık -->
  <div class="page-hero">
  <div>
- <h1>Rezervasyon Oluştur</h1>
- <p>Araç ve charger seçip zaman dilimi belirleyin</p>
+ <h1 th:text="#{reservations.create.title}">Create Reservation</h1>
+ <p th:text="#{reservations.create.subtitle}">Choose a vehicle, charger, and time slot</p>
  </div>
- <a th:href="@{/ui/reservations}" class="back-btn">← Geri</a>
+ <a th:href="@{/ui/reservations}" class="back-btn" th:text="#{common.back}">← Back</a>
  </div>
 
  <!-- Hata mesajı -->
@@ -268,7 +235,7 @@
 
  <!-- Kural şeridi -->
  <div class="rule-strip">
- ℹ &nbsp;Konnektör tipleri <strong>uyuşmalı</strong> &nbsp;·&nbsp; Maks. <strong>2 saat</strong> &nbsp;·&nbsp; En fazla <strong>24 saat ileriye</strong> rezervasyon yapılabilir
+ <span th:utext="#{reservations.create.ruleStrip}">Connector types must match · Max 2 hours · Reservations can be made up to 24 hours ahead</span>
  </div>
 
  <div class="form-body">
@@ -279,9 +246,9 @@
 
  <!-- Araç seçimi -->
  <div>
- <div class="sec-title">Araç</div>
+ <div class="sec-title" th:text="#{reservations.vehicle}">Vehicle</div>
  <select name="vehicleId" class="fancy-select" required>
- <option value="">Araç seçin...</option>
+ <option value="" th:text="#{reservations.create.selectVehicle}">Select vehicle...</option>
  <option th:each="v : ${vehicles}"
  th:value="${v.id}"
  th:selected="${v.id == selectedVehicleId}"
@@ -293,29 +260,29 @@
  <div>
  <div class="sec-title">Charger</div>
  <select name="chargerId" class="fancy-select" required>
- <option value="">Charger seçin...</option>
+ <option value="" th:text="#{reservations.create.selectCharger}">Select charger...</option>
  <option th:each="c : ${chargers}"
  th:value="${c.id}"
  th:selected="${c.id == selectedChargerId}"
  th:text="${c.chargerCode != null ? c.chargerCode : 'Charger #' + c.id} + ' · ' + ${c.connectorType} + ' · ' + ${c.powerOutput} + ' · ₺' + ${c.pricePerKwh} + '/kWh · ' + ${c.status}"></option>
  </select>
  <div class="select-hint">
- <span style="color:#22c55e;"></span> Sadece AVAILABLE charger'lar rezerve edilebilir
+ <span style="color:#22c55e;"></span> <span th:text="#{reservations.create.availableOnly}">Only AVAILABLE chargers can be reserved</span>
  </div>
  </div>
 
  <!-- Ayraç -->
- <div class="sep">Zaman Seçimi</div>
+ <div class="sep" th:text="#{reservations.create.timeSelection}">Time Selection</div>
 
  <!-- Tarih + saat -->
  <div class="datetime-grid">
  <div class="dt-box">
- <div class="lbl">Başlangıç</div>
+ <div class="lbl" th:text="#{reservations.start}">Start</div>
  <input type="date" id="startDate"/>
  <input type="time" id="startTime" step="60"/>
  </div>
  <div class="dt-box">
- <div class="lbl">Bitiş</div>
+ <div class="lbl" th:text="#{reservations.end}">End</div>
  <input type="date" id="endDate"/>
  <input type="time" id="endTime" step="60"/>
  </div>
@@ -323,16 +290,16 @@
 
  <!-- Süre göstergesi -->
  <div class="duration-bar" id="durationBar" style="display:none;">
- <span style="color:#64748b;">⏱ Rezervasyon süresi</span>
+ <span style="color:#64748b;" th:text="#{reservations.create.durationLabel}">Reservation duration</span>
  <span class="duration-pill duration-ok" id="durationPill">–</span>
  </div>
 
  <!-- Butonlar -->
  <div class="submit-row">
  <button type="submit" class="submit-btn" onclick="return buildDatetimes()">
- Rezervasyon Oluştur
+ <span th:text="#{reservations.create.submit}">Create Reservation</span>
  </button>
- <a th:href="@{/ui/reservations}" class="cancel-btn">İptal</a>
+ <a th:href="@{/ui/reservations}" class="cancel-btn" th:text="#{common.cancel}">Cancel</a>
  </div>
 
  </form>
@@ -342,9 +309,20 @@
  </div>
 </div>
 
-<footer>EV Charging System &copy; 2026</footer>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
 
-<script>
+<script th:inline="javascript">
+ const i18n = {
+ invalidRange: [[#{reservations.create.invalidRange}]],
+ maxDurationPill: [[#{reservations.create.maxDurationPill}]],
+ hourShort: [[#{reservations.create.hourShort}]],
+ minuteShort: [[#{reservations.create.minuteShort}]],
+ hourWord: [[#{reservations.create.hourWord}]],
+ minuteWord: [[#{reservations.create.minuteWord}]],
+ fillDateTime: [[#{reservations.create.fillDateTime}]],
+ endAfterStart: [[#{reservations.create.endAfterStart}]],
+ maxDurationAlert: [[#{reservations.create.maxDurationAlert}]]
+ };
  const pad = n => String(n).padStart(2, '0');
 
  // Bugünün ve yarının tarihi
@@ -389,15 +367,15 @@
  const diffMin = Math.round((e - s) / 60000);
  if (diffMin <= 0) {
  pill.className = 'duration-pill duration-bad';
- pill.textContent = ' Geçersiz aralık';
+ pill.textContent = i18n.invalidRange;
  } else if (diffMin > 120) {
  const h = Math.floor(diffMin/60), m = diffMin%60;
  pill.className = 'duration-pill duration-bad';
- pill.textContent = `${h}s ${m}dk – Maks. 2 saat!`;
+ pill.textContent = `${h}${i18n.hourShort} ${m}${i18n.minuteShort} - ${i18n.maxDurationPill}`;
  } else {
  const h = Math.floor(diffMin/60), m = diffMin%60;
  pill.className = 'duration-pill duration-ok';
- pill.textContent = `${h > 0 ? h + ' saat ' : ''}${m > 0 ? m + ' dakika' : ''}`;
+ pill.textContent = `${h > 0 ? h + ' ' + i18n.hourWord + ' ' : ''}${m > 0 ? m + ' ' + i18n.minuteWord : ''}`;
  }
  }
 
@@ -409,11 +387,11 @@
  const s = getDatetime(startDateIn, startTimeIn);
  const e = getDatetime(endDateIn, endTimeIn);
 
- if (!s || !e) { alert('Lütfen tarih ve saat alanlarını doldurun.'); return false; }
- if (e <= s) { alert('Bitiş zamanı başlangıçtan sonra olmalı.'); return false; }
+ if (!s || !e) { alert(i18n.fillDateTime); return false; }
+ if (e <= s) { alert(i18n.endAfterStart); return false; }
 
  const diffMin = Math.round((e - s) / 60000);
- if (diffMin > 120) { alert('Maksimum 2 saat rezervasyon yapılabilir.'); return false; }
+ if (diffMin > 120) { alert(i18n.maxDurationAlert); return false; }
 
  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
  document.getElementById('startTimeHidden').value = fmt(s);

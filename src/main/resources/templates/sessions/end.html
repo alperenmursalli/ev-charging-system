@@ -20,20 +20,20 @@
  <!-- Aktif session özeti -->
  <div class="card" th:if="${chargingSession}">
  <div class="card-header">
- <span class="card-title"> Aktif Oturum</span>
- <span class="badge badge-yellow"> Aktif</span>
+ <span class="card-title" th:text="#{sessions.activeSession}">Active Session</span>
+ <span class="badge badge-yellow" th:text="#{sessions.active}">Active</span>
  </div>
  <div class="grid-2" style="font-size:0.9rem;">
  <div>
- <p class="text-muted" style="font-size:0.78rem;">OTURUM ID</p>
+ <p class="text-muted" style="font-size:0.78rem;" th:text="#{sessions.id.upper}">SESSION ID</p>
  <p><strong>#<span th:text="${chargingSession.id}"></span></strong></p>
  </div>
  <div>
- <p class="text-muted" style="font-size:0.78rem;">BAŞLANGIÇ BATARYASİ</p>
+ <p class="text-muted" style="font-size:0.78rem;" th:text="#{sessions.startBattery.upper}">START BATTERY</p>
  <p><strong th:text="${chargingSession.startBatteryLevel} + '%'"></strong></p>
  </div>
  <div>
- <p class="text-muted" style="font-size:0.78rem;">BAŞLANGIÇ</p>
+ <p class="text-muted" style="font-size:0.78rem;" th:text="#{reservations.start.upper}">START</p>
  <p th:text="${#temporals.format(chargingSession.startedAt, 'HH:mm:ss')}"></p>
  </div>
  <div>
@@ -43,11 +43,11 @@
  </div>
 
  <div style="margin-top:1rem;">
- <p class="text-muted" style="font-size:0.78rem;margin-bottom:0.3rem;">MEVCUT BATARYA (tahmini)</p>
+ <p class="text-muted" style="font-size:0.78rem;margin-bottom:0.3rem;" th:text="#{sessions.currentBatteryEstimate.upper}">CURRENT BATTERY (estimate)</p>
  <div class="battery-bar">
  <div class="battery-fill" th:style="'width:' + ${chargingSession.startBatteryLevel} + '%'"></div>
  </div>
- <p style="font-size:0.82rem;" th:text="${chargingSession.startBatteryLevel} + '% başlangıç'"></p>
+ <p style="font-size:0.82rem;" th:text="#{sessions.startBatteryValue(${chargingSession.startBatteryLevel})}"></p>
  </div>
  </div>
 
@@ -56,12 +56,13 @@
  <form th:action="@{/ui/sessions/{id}/end(id=${chargingSession.id})}" method="post">
  <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
  <div class="form-group">
- <label class="form-label">Bitiş Batarya Seviyesi (%) *</label>
+ <label class="form-label" th:text="#{sessions.end.batteryLevel}">End Battery Level (%) *</label>
  <input type="number" name="endBatteryLevel" class="form-control" required
  th:min="${chargingSession.startBatteryLevel}" max="100" step="0.1"
- placeholder="Şu anki batarya yüzdesi"/>
+ th:placeholder="#{sessions.end.batteryPlaceholder}"/>
  <div class="form-hint">
- Başlangıçtan (<span th:text="${chargingSession.startBatteryLevel}"></span>%) yüksek olmalı
+ <span th:text="#{sessions.end.mustBeAbovePrefix}">Must be above start level</span>
+ (<span th:text="${chargingSession.startBatteryLevel}"></span>%)
  </div>
  </div>
 
