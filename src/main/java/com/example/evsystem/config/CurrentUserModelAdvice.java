@@ -25,6 +25,14 @@ public class CurrentUserModelAdvice {
                 .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
+    @ModelAttribute("currentUserRoleLabel")
+    public String currentUserRoleLabel(Authentication authentication) {
+        if (!isLoggedIn(authentication)) {
+            return "";
+        }
+        return isAdmin(authentication) ? "ADMIN" : "USER";
+    }
+
     private boolean isLoggedIn(Authentication authentication) {
         return authentication != null
                 && authentication.isAuthenticated()

@@ -11,7 +11,10 @@
  <a th:href="@{/ui/reservations}" th:classappend="${activePage == 'reservations'} ? 'active'" th:text="#{nav.reservations}">Reservations</a>
   <a th:if="${!isAuthenticated}" th:href="@{/ui/login}" th:text="#{auth.login}">Login</a>
   <a th:if="${!isAuthenticated}" th:href="@{/ui/register}" th:text="#{auth.register}">Register</a>
-  <span th:if="${isAuthenticated}" class="navbar-user" th:text="${currentUsername}">user</span>
+  <span th:if="${isAuthenticated}" class="navbar-user">
+   <span th:text="${currentUsername}">user</span>
+   <span class="role-badge" th:classappend="${isAdmin} ? ' role-admin' : ' role-user'" th:text="${currentUserRoleLabel}">USER</span>
+  </span>
   <form th:if="${isAuthenticated}" th:action="@{/ui/logout}" method="post" style="display:inline;">
    <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
    <button type="submit" class="btn btn-outline btn-sm" th:text="#{auth.logout}">Logout</button>
