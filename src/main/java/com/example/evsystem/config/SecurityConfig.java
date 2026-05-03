@@ -26,7 +26,7 @@ public class SecurityConfig {
                         "/ui/logout"
                 ))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/error", "/favicon.ico", "/ui/home", "/ui/login", "/ui/register", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/error", "/favicon.ico", "/ui/home", "/ui/login", "/ui/register", "/css/**", "/js/**", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/stations/**", "/chargers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/stations/**", "/chargers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/stations/**", "/chargers/**", "/reservations/**").hasRole("ADMIN")
