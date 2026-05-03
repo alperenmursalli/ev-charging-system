@@ -14,9 +14,7 @@ WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=build /app/target/*.jar app.jar
-
-RUN chown appuser:appuser app.jar
+COPY --from=build --chown=appuser:appgroup /app/target/*.jar app.jar
 
 USER appuser
 

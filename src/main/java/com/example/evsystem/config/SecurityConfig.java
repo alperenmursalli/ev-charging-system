@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,14 +18,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        "/vehicles/**",
-                        "/stations/**",
-                        "/chargers/**",
-                        "/reservations/**",
-                        "/sessions/**",
-                        "/ui/logout"
-                ))
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/error", "/favicon.ico", "/ui/home", "/ui/login", "/ui/register", "/css/**", "/js/**", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/stations/**", "/chargers/**").hasRole("ADMIN")
