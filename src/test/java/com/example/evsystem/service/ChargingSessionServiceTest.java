@@ -1,5 +1,6 @@
 package com.example.evsystem.service;
 
+import com.example.evsystem.entity.AppUser;
 import com.example.evsystem.entity.Charger;
 import com.example.evsystem.entity.ChargingSession;
 import com.example.evsystem.entity.Reservation;
@@ -9,6 +10,7 @@ import com.example.evsystem.enums.ChargingSessionStatus;
 import com.example.evsystem.enums.ConnectorType;
 import com.example.evsystem.enums.PowerOutput;
 import com.example.evsystem.enums.ReservationStatus;
+import com.example.evsystem.enums.UserRole;
 import com.example.evsystem.exception.BusinessException;
 import com.example.evsystem.repository.ChargerRepository;
 import com.example.evsystem.repository.ChargingSessionRepository;
@@ -30,6 +32,7 @@ class ChargingSessionServiceTest {
     private ReservationRepository reservationRepository;
     private ChargerRepository chargerRepository;
     private ReservationService reservationService;
+    private CurrentUserService currentUserService;
     private ChargingSessionService chargingSessionService;
 
     // --- Helper builder methods ---
@@ -87,8 +90,11 @@ class ChargingSessionServiceTest {
         reservationRepository = mock(ReservationRepository.class);
         chargerRepository = mock(ChargerRepository.class);
         reservationService = mock(ReservationService.class);
+        currentUserService = mock(CurrentUserService.class);
+        when(currentUserService.isCurrentUserAdmin()).thenReturn(false);
+        when(currentUserService.getCurrentUsername()).thenReturn(Optional.empty());
         chargingSessionService = new ChargingSessionService(
-                chargingSessionRepository, reservationRepository, chargerRepository, reservationService, 20f
+                chargingSessionRepository, reservationRepository, chargerRepository, reservationService, currentUserService, 20f
         );
     }
 
@@ -211,6 +217,30 @@ class ChargingSessionServiceTest {
                 () -> chargingSessionService.endSession(4L, 40f)); // 40 < 60 is invalid
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(chargingSessionRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldHideSession_whenReservationVehicleBelongsToAnotherUser() {
+        AppUser owner = new AppUser();
+        owner.setUsername("bob");
+        owner.setPasswordHash("hash");
+        owner.setRole(UserRole.ROLE_USER);
+
+        Vehicle vehicle = buildVehicle(75.0);
+        vehicle.setOwner(owner);
+        Charger charger = buildCharger(2.0f);
+        ChargingSession session = buildActiveSession(vehicle, charger, 50f,
+                LocalDateTime.now().minusMinutes(10),
+                LocalDateTime.now().plusMinutes(30));
+
+        when(currentUserService.getCurrentUsername()).thenReturn(Optional.of("alice"));
+        when(chargingSessionRepository.findById(7L)).thenReturn(Optional.of(session));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> chargingSessionService.endSession(7L, 80f));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         verify(chargingSessionRepository, never()).save(any());
     }
 

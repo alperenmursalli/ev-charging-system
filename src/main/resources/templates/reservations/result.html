@@ -37,27 +37,27 @@
  </div>
  <table style="width:100%;font-size:0.9rem;">
  <tr>
- <td class="text-muted" style="padding:0.4rem 0;width:45%;">Rezervasyon ID</td>
+ <td class="text-muted" style="padding:0.4rem 0;width:45%;" th:text="#{reservations.id}">Reservation ID</td>
  <td><strong>#<span th:text="${reservation.id}"></span></strong></td>
  </tr>
  <tr>
- <td class="text-muted" style="padding:0.4rem 0;">Araç</td>
- <td>Araç #<span th:text="${reservation.vehicleId}"></span></td>
+ <td class="text-muted" style="padding:0.4rem 0;" th:text="#{reservations.vehicle}">Vehicle</td>
+ <td><span th:text="#{reservations.vehicleShort}">Vehicle</span> #<span th:text="${reservation.vehicleId}"></span></td>
  </tr>
  <tr>
- <td class="text-muted" style="padding:0.4rem 0;">Charger</td>
+ <td class="text-muted" style="padding:0.4rem 0;" th:text="#{reservations.charger}">Charger</td>
  <td>Charger #<span th:text="${reservation.chargerId}"></span></td>
  </tr>
  <tr>
- <td class="text-muted" style="padding:0.4rem 0;">Başlangıç</td>
+ <td class="text-muted" style="padding:0.4rem 0;" th:text="#{reservations.start}">Start</td>
  <td th:text="${#temporals.format(reservation.startTime, 'dd.MM.yyyy HH:mm')}"></td>
  </tr>
  <tr>
- <td class="text-muted" style="padding:0.4rem 0;">Bitiş</td>
+ <td class="text-muted" style="padding:0.4rem 0;" th:text="#{reservations.end}">End</td>
  <td th:text="${#temporals.format(reservation.endTime, 'dd.MM.yyyy HH:mm')}"></td>
  </tr>
  <tr>
- <td class="text-muted" style="padding:0.4rem 0;">Durum</td>
+ <td class="text-muted" style="padding:0.4rem 0;" th:text="#{common.status}">Status</td>
  <td><span class="badge badge-blue" th:text="${reservation.status}"></span></td>
  </tr>
  </table>

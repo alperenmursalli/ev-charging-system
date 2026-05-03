@@ -2,58 +2,25 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
- <title>Hata – EV Charging</title>
+ <title th:text="#{error.title} + ' – EV Charging'">Error – EV Charging</title>
  <link rel="stylesheet" th:href="@{/css/style.css}"/>
  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 </head>
 <body>
-<nav class="navbar">
- <a href="/ui/home" class="navbar-brand"> <span>EV</span>Charge</a>
- <div class="navbar-links">
- <a th:href="@{/ui/home}">Ana Sayfa</a>
- <a th:href="@{/ui/vehicles}">Araçlar</a>
- <a th:href="@{/ui/stations}">İstasyonlar</a>
- <a th:href="@{/ui/stations/map}"> Harita</a>
- <a th:href="@{/ui/reservations}">Rezervasyonlar</a>
- <a th:href="@{/ui/sessions/start}">Şarj Et</a>
- <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="Dark / Light mode">
- <span id="darkIcon"></span>
- <span class="toggle-label" id="darkLabel">Dark</span>
- </button>
- </div>
-</nav>
-<script>
- (function(){
- var d = localStorage.getItem("evDark");
- if(d === "1") { document.body.classList.add("dark"); }
- })();
- function toggleDark() {
- var on = document.body.classList.toggle("dark");
- localStorage.setItem("evDark", on ? "1" : "0");
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
- window.addEventListener("DOMContentLoaded", function(){
- var on = document.body.classList.contains("dark");
- var btn = document.getElementById("darkBtn");
- if(btn){
- document.getElementById("darkIcon").textContent = on ? "" : "";
- document.getElementById("darkLabel").textContent = on ? "Light" : "Dark";
- }
- });
-</script>
+<th:block th:replace="~{fragments/layout :: navbar('')}"></th:block>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
 <div class="page-wrapper">
  <div style="max-width:480px;margin:3rem auto;text-align:center;">
  <div style="font-size:4rem;"></div>
- <h1 style="margin:1rem 0 0.5rem;">Bir Hata Oluştu</h1>
+ <h1 style="margin:1rem 0 0.5rem;" th:text="#{error.heading}">An Error Occurred</h1>
  <div class="alert alert-danger" th:if="${errorMsg}" th:text="${errorMsg}" style="text-align:left;"></div>
- <div class="alert alert-danger" th:unless="${errorMsg}">Beklenmeyen bir hata oluştu.</div>
+ <div class="alert alert-danger" th:unless="${errorMsg}" th:text="#{error.unexpected}">An unexpected error occurred.</div>
  <div class="flex gap-1" style="justify-content:center;margin-top:1.5rem;">
- <a th:href="@{/ui/home}" class="btn btn-primary"> Ana Sayfa</a>
- <button onclick="history.back()" class="btn btn-outline">← Geri</button>
+ <a th:href="@{/ui/home}" class="btn btn-primary" th:text="#{nav.home}">Home</a>
+ <button onclick="history.back()" class="btn btn-outline" th:text="#{common.back}">← Back</button>
  </div>
  </div>
 </div>
-<footer>EV Charging System &copy; 2026</footer>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
 </body>
 </html>

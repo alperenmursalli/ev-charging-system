@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+ <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title>Register – EV Charging</title>
+ <link rel="stylesheet" th:href="@{/css/style.css}"/>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<th:block th:replace="~{fragments/layout :: uiScripts}"></th:block>
+<div class="page-wrapper">
+ <div style="max-width:480px;margin:2rem auto;">
+  <div class="card">
+   <div class="card-header">
+    <span class="card-title">Create Account</span>
+   </div>
+   <form th:action="@{/ui/register}" method="post" th:object="${registerUserRequest}">
+    <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+    <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
+    <div class="form-group">
+     <label class="form-label" for="username">Username</label>
+     <input id="username" name="username" type="text" class="form-control" th:value="*{username}" autocomplete="username" required/>
+     <div class="error-msg" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="password">Password</label>
+     <input id="password" name="password" type="password" class="form-control" autocomplete="new-password" required/>
+     <div class="error-msg" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+    </div>
+    <div class="form-group">
+     <label class="form-label" for="confirmPassword">Confirm Password</label>
+     <input id="confirmPassword" name="confirmPassword" type="password" class="form-control" autocomplete="new-password" required/>
+     <div class="error-msg" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+    </div>
+    <div class="flex gap-1 mt-2">
+      <button type="submit" class="btn btn-primary">Register</button>
+      <a th:href="@{/ui/login}" class="btn btn-outline">Back to Login</a>
+      <a th:href="@{/ui/home}" class="btn btn-outline">Home</a>
+    </div>
+   </form>
+  </div>
+ </div>
+</div>
+<th:block th:replace="~{fragments/layout :: footer}"></th:block>
+</body>
+</html>
