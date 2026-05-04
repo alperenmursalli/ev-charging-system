@@ -11,11 +11,13 @@ import com.example.evsystem.service.ChargerService;
 import com.example.evsystem.service.ChargingSessionService;
 import com.example.evsystem.service.ReservationService;
 import com.example.evsystem.service.StationService;
+import com.example.evsystem.service.AppUserService;
 import com.example.evsystem.service.VehicleService;
 import com.example.evsystem.exception.BusinessException;
 import jakarta.validation.Valid;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -33,6 +35,7 @@ public class WebController {
     private final ChargerService chargerService;
     private final ReservationService reservationService;
     private final ChargingSessionService chargingSessionService;
+    private final AppUserService appUserService;
     private final MessageSource messageSource;
 
     public WebController(VehicleService vehicleService,
@@ -40,18 +43,27 @@ public class WebController {
                          ChargerService chargerService,
                          ReservationService reservationService,
                          ChargingSessionService chargingSessionService,
+                         AppUserService appUserService,
                          MessageSource messageSource) {
         this.vehicleService = vehicleService;
         this.stationService = stationService;
         this.chargerService = chargerService;
         this.reservationService = reservationService;
         this.chargingSessionService = chargingSessionService;
+        this.appUserService = appUserService;
         this.messageSource = messageSource;
     }
 
     @GetMapping({"", "/home"})
     public String home() {
         return "index";
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String listUsers(Model model) {
+        model.addAttribute("users", appUserService.getAllUsers());
+        return "users/list";
     }
 
     // ─── VEHICLES ───

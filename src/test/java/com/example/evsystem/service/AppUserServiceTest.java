@@ -8,10 +8,12 @@ import com.example.evsystem.repository.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -101,6 +103,27 @@ class AppUserServiceTest {
         assertEquals("admin", details.getUsername());
         assertTrue(details.getAuthorities().stream()
                 .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority())));
+    }
+
+    @Test
+    void getAllUsersReturnsUsersSortedById() {
+        AppUser admin = new AppUser();
+        admin.setUsername("admin");
+        admin.setRole(UserRole.ROLE_ADMIN);
+        admin.setEnabled(true);
+
+        AppUser alice = new AppUser();
+        alice.setUsername("alice");
+        alice.setRole(UserRole.ROLE_USER);
+        alice.setEnabled(true);
+
+        Sort expectedSort = Sort.by(Sort.Direction.ASC, "id");
+        when(appUserRepository.findAll(expectedSort)).thenReturn(List.of(admin, alice));
+
+        List<AppUser> users = appUserService.getAllUsers();
+
+        assertEquals(List.of(admin, alice), users);
+        verify(appUserRepository).findAll(expectedSort);
     }
 
     private RegisterUserRequest registerRequest(String username, String password, String confirmPassword) {
