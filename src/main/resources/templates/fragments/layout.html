@@ -9,7 +9,6 @@
  <a th:href="@{/ui/stations}" th:classappend="${activePage == 'stations'} ? 'active'" th:text="#{nav.stations}">Stations</a>
  <a th:href="@{/ui/stations/map}" th:classappend="${activePage == 'map'} ? 'active'" th:text="#{nav.map}">Map</a>
  <a th:href="@{/ui/reservations}" th:classappend="${activePage == 'reservations'} ? 'active'" th:text="#{nav.reservations}">Reservations</a>
-  <a th:if="${isAdmin}" th:href="@{/ui/users}" th:classappend="${activePage == 'users'} ? 'active'">Users</a>
   <a th:if="${!isAuthenticated}" th:href="@{/ui/login}" th:text="#{auth.login}">Login</a>
   <a th:if="${!isAuthenticated}" th:href="@{/ui/register}" th:text="#{auth.register}">Register</a>
   <span th:if="${isAuthenticated}" class="navbar-user">
