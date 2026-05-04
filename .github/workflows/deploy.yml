@@ -17,7 +17,17 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -e
             cd ~/ev-charging-system
-            git pull
-            docker-compose up -d --force-recreate
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            docker-compose down --remove-orphans
+            docker-compose up -d --build --force-recreate
+
+            sleep 25
+            docker-compose ps
+            curl -f http://localhost:8081/actuator/health
+
             docker image prune -f
