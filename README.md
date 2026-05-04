@@ -1,6 +1,6 @@
-# EV Charging System
+# EV Charging Reservation and Management Application
 
-EV Charging System is a Spring Boot web application for managing electric vehicle charging operations. It supports user registration and login, vehicle management, station and charger discovery, reservation creation, charging session tracking, and administrative charger/station operations.
+EV Charging Reservation and Management Application is a Spring Boot web application for managing electric vehicle charging operations. It supports user registration and login, vehicle management, station and charger discovery, reservation creation, charging session tracking, and administrative charger/station operations.
 
 ## Project Links
 
@@ -21,7 +21,6 @@ EV Charging System is a Spring Boot web application for managing electric vehicl
 - Reservation creation with connector compatibility and time conflict checks
 - Charging session start/end flow
 - Energy consumption and total cost calculation
-- Admin-only user list endpoint at `/users`
 - Thymeleaf-based web UI
 - REST API with Swagger/OpenAPI documentation
 - PostgreSQL database support
