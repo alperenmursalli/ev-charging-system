@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 <nav class="navbar" th:fragment="navbar(activePage)">
- <a href="/ui/home" class="navbar-brand"><span>EV</span>Charge</a>
+ <a href="/ui/home" class="navbar-brand"><span>Charge</span>Go</a>
  <div class="navbar-links">
   <a th:href="@{/ui/home}" th:classappend="${activePage == 'home'} ? 'active'" th:text="#{nav.home}">Home</a>
   <a th:href="@{/ui/vehicles}" th:classappend="${activePage == 'vehicles'} ? 'active'" th:text="#{nav.vehicles}">Vehicles</a>
@@ -61,6 +61,6 @@
  </script>
 </th:block>
 
-<footer th:fragment="footer">EV Charging System &copy; 2026</footer>
+<footer th:fragment="footer">ChargeGo &copy; 2026</footer>
 </body>
 </html>

@@ -49,7 +49,6 @@ public class WebController {
         this.messageSource = messageSource;
     }
 
-    // Ana Sayfa
     @GetMapping({"", "/home"})
     public String home() {
         return "index";
