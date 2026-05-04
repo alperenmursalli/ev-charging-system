@@ -1,0 +1,168 @@
+---
+title: "Book a charger reservation in ChargeGo"
+description: "Reserve a specific EV charger for a future time window, with automatic validation for connector compatibility, availability, and scheduling conflicts."
+---
+
+Reservations in ChargeGo lock a specific charger for a defined time window so you can arrive and plug in without competing with other drivers. The system validates connector compatibility, charger availability, and time conflicts at the moment you book. This guide walks through the full reservation lifecycle from registering your vehicle to cancelling if your plans change.
+
+<Warning>
+  Reservations have a maximum duration of **2 hours** and can only be created up to **24 hours in advance**. Make sure your vehicle's connector type matches the charger before booking — incompatible connectors will be rejected immediately.
+</Warning>
+
+## Base URL
+
+```
+https://charge-go.duckdns.org
+```
+
+All requests require Basic Auth with your ChargeGo username and password.
+
+---
+
+<Steps>
+
+<Step title="Register your vehicle">
+
+Before making a reservation, you need a vehicle record linked to your account. Each vehicle stores its connector type, which ChargeGo uses to check compatibility with chargers.
+
+```bash
+curl -u username:password \
+  -X POST "https://charge-go.duckdns.org/vehicles" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "brand": "Tesla",
+    "model": "Model 3",
+    "batteryCapacity": 75.0,
+    "connectorType": "CCS",
+    "plateNumber": "34ABC123"
+  }'
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `brand` | string | Yes | Vehicle manufacturer |
+| `model` | string | Yes | Vehicle model name |
+| `batteryCapacity` | double | Yes | Total battery capacity in kWh — used for cost calculations |
+| `connectorType` | string | Yes | `CCS`, `TYPE2`, or `CHADEMO` — must match the charger you book |
+| `plateNumber` | string | Yes | Vehicle license plate number |
+
+The response includes the vehicle's `id`. Note this — you will need it when creating a reservation.
+
+```json Example response
+{
+  "id": 1,
+  "brand": "Tesla",
+  "model": "Model 3",
+  "batteryCapacity": 75.0,
+  "connectorType": "CCS",
+  "plateNumber": "34ABC123"
+}
+```
+
+</Step>
+
+<Step title="Find an available charger">
+
+Use the discovery endpoint to find a charger whose connector type matches your vehicle. Note the charger's `id` from the response.
+
+```bash Find CCS chargers
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/discovery?connectorType=CCS&status=AVAILABLE"
+```
+
+You can also list all chargers at a known station:
+
+```bash List chargers at station 1
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/1/chargers"
+```
+
+See the [Find and filter EV charging stations](/guides/find-station) guide for full filter options and response details.
+
+</Step>
+
+<Step title="Create the reservation">
+
+Send a `POST` request to `/reservations` with your vehicle ID, the charger ID, and the time window you want.
+
+```bash
+curl -u username:password \
+  -X POST "https://charge-go.duckdns.org/reservations" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vehicleId": 1,
+    "chargerId": 3,
+    "startTime": "2026-05-05T10:00:00",
+    "endTime": "2026-05-05T11:00:00"
+  }'
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `vehicleId` | long | Yes | ID of your registered vehicle |
+| `chargerId` | long | Yes | ID of the charger you want to reserve |
+| `startTime` | datetime | Yes | ISO 8601 datetime — must be in the future and within the next 24 hours |
+| `endTime` | datetime | Yes | ISO 8601 datetime — must be after `startTime` and no more than 2 hours later |
+
+**Successful response (200)**
+
+```json
+{
+  "id": 42,
+  "vehicleId": 1,
+  "chargerId": 3,
+  "startTime": "2026-05-05T10:00:00",
+  "endTime": "2026-05-05T11:00:00",
+  "status": "ACTIVE",
+  "sessionId": null,
+  "sessionStatus": null,
+  "consumedKwh": null,
+  "totalCost": null
+}
+```
+
+Note the reservation `id` — you will need it to start your session.
+
+### Validation errors (400 / 409)
+
+The API returns an error when any of the following conditions are detected:
+
+| Cause | HTTP status | Error message |
+|---|---|---|
+| `connectorType` mismatch between your vehicle and the charger | `400` | `Vehicle connector type is not compatible with the charger.` |
+| `startTime` is in the past | `400` | `Reservation start time cannot be in the past.` |
+| `startTime` is more than 24 hours away | `400` | `Reservations can only be created within the next 24 hours.` |
+| Reservation duration exceeds 2 hours | `400` | `Reservation duration cannot exceed 2 hours.` |
+| The charger already has an overlapping reservation | `409` | `There is already a reservation for this charger in the selected time range.` |
+| The charger is not in `AVAILABLE` status | `409` | `Reservations can only be created for available chargers.` |
+
+</Step>
+
+<Step title="Cancel a reservation if needed">
+
+If your plans change before the charging session begins, you can cancel the reservation with a `PATCH` request.
+
+```bash
+curl -u username:password \
+  -X PATCH "https://charge-go.duckdns.org/reservations/42/cancel"
+```
+
+Cancellation is only allowed while the reservation is in `ACTIVE` status. You cannot cancel a reservation once a charging session has started (`IN_PROGRESS`), or if the reservation has already been completed or expired.
+
+</Step>
+
+</Steps>
+
+## Reservation status lifecycle
+
+| Status | Meaning |
+|---|---|
+| `ACTIVE` | Reservation is confirmed and waiting for the session to begin |
+| `IN_PROGRESS` | A charging session has started for this reservation |
+| `COMPLETED` | The session has ended and the reservation is closed |
+| `CANCELLED` | You cancelled the reservation before it started |
+| `EXPIRED` | The end time passed without a session being started — the system auto-expires these |
+
+<Note>
+  Expired and completed reservations without a session history are automatically cleaned up by the system after a retention period. You do not need to delete them manually.
+</Note>

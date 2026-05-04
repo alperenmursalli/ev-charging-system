@@ -1,0 +1,263 @@
+---
+title: "Vehicles API — manage your EV fleet"
+description: "Create, retrieve, update, and delete the electric vehicles in your account so they can be matched to compatible chargers when making reservations."
+---
+
+The Vehicles API lets you maintain a registry of the electric vehicles in your fleet. Each vehicle record stores the connector type and battery capacity that ChargeGo uses to validate charger compatibility and calculate energy consumption during a charging session. All five endpoints require HTTP Basic Auth.
+
+## The vehicle object
+
+<ResponseField name="id" type="number">
+  The unique ID assigned to the vehicle by ChargeGo.
+</ResponseField>
+
+<ResponseField name="brand" type="string">
+  The vehicle manufacturer name, e.g., `Tesla`.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The vehicle model name, e.g., `Model 3`.
+</ResponseField>
+
+<ResponseField name="batteryCapacity" type="number">
+  Total usable battery capacity in kilowatt-hours (kWh), e.g., `75.0`.
+</ResponseField>
+
+<ResponseField name="connectorType" type="string">
+  The charging connector standard used by this vehicle. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ResponseField>
+
+<ResponseField name="plateNumber" type="string">
+  The vehicle's license plate number, e.g., `34ABC123`.
+</ResponseField>
+
+---
+
+## Create a vehicle
+
+<br />
+
+`POST /vehicles`
+
+Registers a new vehicle and returns the created record with its assigned `id`. Responds with `201 Created` on success.
+
+### Request body
+
+<ParamField body="brand" type="string" required>
+  The vehicle manufacturer name, e.g., `Tesla`.
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  The vehicle model name, e.g., `Model Y`.
+</ParamField>
+
+<ParamField body="batteryCapacity" type="number" required>
+  Total usable battery capacity in kWh. Must be greater than zero.
+</ParamField>
+
+<ParamField body="connectorType" type="string" required>
+  The connector standard. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ParamField>
+
+<ParamField body="plateNumber" type="string" required>
+  The vehicle's license plate number.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://charge-go.duckdns.org/vehicles \
+  -u username:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "brand": "Tesla",
+    "model": "Model 3",
+    "batteryCapacity": 75.0,
+    "connectorType": "CCS",
+    "plateNumber": "34ABC123"
+  }'
+```
+
+</CodeGroup>
+
+```json Response (201 Created)
+{
+  "id": 1,
+  "brand": "Tesla",
+  "model": "Model 3",
+  "batteryCapacity": 75.0,
+  "connectorType": "CCS",
+  "plateNumber": "34ABC123"
+}
+```
+
+---
+
+## List all vehicles
+
+<br />
+
+`GET /vehicles`
+
+Returns an array of all vehicle records in your account. Responds with `200 OK`.
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/vehicles \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 1,
+    "brand": "Tesla",
+    "model": "Model 3",
+    "batteryCapacity": 75.0,
+    "connectorType": "CCS",
+    "plateNumber": "34ABC123"
+  },
+  {
+    "id": 2,
+    "brand": "Renault",
+    "model": "Zoe",
+    "batteryCapacity": 52.0,
+    "connectorType": "TYPE2",
+    "plateNumber": "35ZOE01"
+  }
+]
+```
+
+---
+
+## Get a vehicle by ID
+
+<br />
+
+`GET /vehicles/{id}`
+
+Returns a single vehicle record. Responds with `200 OK`, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the vehicle. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/vehicles/1 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 1,
+  "brand": "Tesla",
+  "model": "Model 3",
+  "batteryCapacity": 75.0,
+  "connectorType": "CCS",
+  "plateNumber": "34ABC123"
+}
+```
+
+---
+
+## Update a vehicle
+
+<br />
+
+`PUT /vehicles/{id}`
+
+Updates one or more fields on an existing vehicle. Only the fields you include in the request body are changed; omitted fields retain their current values. Responds with `200 OK`.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the vehicle to update. Must be greater than zero.
+</ParamField>
+
+### Request body
+
+All fields are optional. Include only the fields you want to change.
+
+<ParamField body="brand" type="string">
+  Updated manufacturer name.
+</ParamField>
+
+<ParamField body="model" type="string">
+  Updated model name.
+</ParamField>
+
+<ParamField body="batteryCapacity" type="number">
+  Updated battery capacity in kWh. Must be greater than zero.
+</ParamField>
+
+<ParamField body="connectorType" type="string">
+  Updated connector standard. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ParamField>
+
+<ParamField body="plateNumber" type="string">
+  Updated license plate number.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X PUT https://charge-go.duckdns.org/vehicles/1 \
+  -u username:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Model S",
+    "batteryCapacity": 100.0,
+    "plateNumber": "34XYZ987"
+  }'
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 1,
+  "brand": "Tesla",
+  "model": "Model S",
+  "batteryCapacity": 100.0,
+  "connectorType": "CCS",
+  "plateNumber": "34XYZ987"
+}
+```
+
+---
+
+## Delete a vehicle
+
+<br />
+
+`DELETE /vehicles/{id}`
+
+Permanently removes a vehicle record. Responds with `204 No Content` on success, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the vehicle to delete. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://charge-go.duckdns.org/vehicles/1 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```
+Response: 204 No Content
+```

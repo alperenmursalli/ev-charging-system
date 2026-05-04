@@ -1,0 +1,83 @@
+---
+title: "ChargeGo REST API overview and authentication"
+description: "Everything you need to start calling the ChargeGo API: base URL, authentication scheme, request format, available resources, and common HTTP status codes."
+---
+
+The ChargeGo REST API gives you programmatic access to every aspect of EV charging management — from registering your fleet and discovering nearby stations to booking chargers and tracking live sessions. All endpoints communicate over HTTPS using JSON, and every request must be authenticated with HTTP Basic Auth.
+
+## Base URL
+
+All API requests are made to the following base URL:
+
+```
+https://charge-go.duckdns.org
+```
+
+Every path in this documentation is relative to this base. For example, the vehicles list endpoint is accessible at `https://charge-go.duckdns.org/vehicles`.
+
+## Authentication
+
+The ChargeGo API uses **HTTP Basic Authentication**. You must include an `Authorization` header with a Base64-encoded `username:password` value on every request. With curl, pass the `-u` flag:
+
+```bash
+curl -u username:password https://charge-go.duckdns.org/vehicles
+```
+
+Requests without valid credentials receive a `401 Unauthorized` response. Requests to admin-only endpoints with non-admin credentials receive a `403 Forbidden` response.
+
+## Request format
+
+All write requests (`POST`, `PUT`, `PATCH`) must set `Content-Type: application/json` and send a JSON body. `GET` and `DELETE` requests do not require a body.
+
+### Sample request with all headers
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://charge-go.duckdns.org/vehicles \
+  -u username:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "brand": "Tesla",
+    "model": "Model 3",
+    "batteryCapacity": 75.0,
+    "connectorType": "CCS",
+    "plateNumber": "34ABC123"
+  }'
+```
+
+</CodeGroup>
+
+## Available resources
+
+The API exposes six resource groups. Each has its own dedicated reference page.
+
+| Resource | Base path | Description |
+|---|---|---|
+| Vehicles | `/vehicles` | Register and manage the EV fleet associated with your account. |
+| Stations | `/stations` | Browse charging station locations and discover stations by capability or proximity. |
+| Chargers | `/chargers` | Inspect and manage individual charging units within a station. |
+| Reservations | `/reservations` | Book a charger for a specific time window and manage existing bookings. |
+| Sessions | `/sessions` | Start and end charging sessions tied to confirmed reservations. |
+
+## Swagger UI
+
+An interactive API explorer is available for administrators at:
+
+```
+https://charge-go.duckdns.org/swagger-ui.html
+```
+
+Admin credentials are required to access Swagger UI.
+
+## HTTP status codes
+
+| Code | Meaning |
+|---|---|
+| `200 OK` | The request succeeded and a response body is returned. |
+| `201 Created` | A new resource was created. The response body contains the created object. |
+| `204 No Content` | The request succeeded and there is no response body (used by `DELETE`). |
+| `400 Bad Request` | The request body or parameters failed validation. The response body contains an error message. |
+| `401 Unauthorized` | Authentication credentials are missing or invalid. |
+| `403 Forbidden` | The authenticated user does not have permission to access the requested resource. |
+| `404 Not Found` | The requested resource does not exist. |

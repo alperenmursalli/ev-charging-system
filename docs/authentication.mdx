@@ -1,0 +1,122 @@
+---
+title: "Authenticate with ChargeGo"
+description: "ChargeGo uses HTTP Basic Authentication for API access and a web login form for the browser UI — learn how both work and what each role can do."
+---
+
+ChargeGo protects all API endpoints with HTTP Basic Authentication. When you make an API request, you include your username and password encoded in the `Authorization` header. For browser-based access, ChargeGo provides a standard login form at `/ui/login`. Both methods use the same account credentials — there is no separate API key to manage.
+
+## Register an account
+
+Before you can authenticate, you need an account. Registration is open to anyone through the web UI or by submitting a form `POST` directly.
+
+**Via the web UI** — visit [https://charge-go.duckdns.org/ui/register](https://charge-go.duckdns.org/ui/register) and fill in the form.
+
+**Via the API** — send a `POST` request to `/ui/register` with your chosen username, password, and password confirmation:
+
+<CodeGroup>
+  ```bash curl
+  curl -X POST https://charge-go.duckdns.org/ui/register \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "username=jane&password=secret123&confirmPassword=secret123"
+  ```
+</CodeGroup>
+
+**Username rules:** 3–50 characters, must not be blank.  
+**Password rules:** 6–100 characters, must not be blank. Passwords are stored securely — they are never saved in plain text.
+
+<Warning>
+  Usernames must be unique. If the username you chose is already taken, the registration form returns an error and you will need to pick a different one.
+</Warning>
+
+## Authenticate API requests
+
+Once registered, pass your credentials with every API request using the HTTP Basic Auth header. The header value is `Basic` followed by your `username:password` string encoded in Base64.
+
+The simplest way to do this with curl is the `-u` flag:
+
+<CodeGroup>
+  ```bash curl
+  curl -X GET https://charge-go.duckdns.org/vehicles \
+    -u yourUsername:yourPassword
+  ```
+</CodeGroup>
+
+If you prefer to construct the header manually, Base64-encode `username:password` and include it directly:
+
+<CodeGroup>
+  ```bash curl
+  curl -X GET https://charge-go.duckdns.org/vehicles \
+    -H "Authorization: Basic amFuZTpzZWNyZXQxMjM="
+  ```
+</CodeGroup>
+
+<Tip>
+  In a terminal you can generate the Base64 value with: `echo -n "yourUsername:yourPassword" | base64`
+</Tip>
+
+## User roles
+
+Every ChargeGo account has one of two roles. The role is assigned at account creation and determines which endpoints you can access.
+
+### ROLE_USER
+
+Standard accounts registered through `/ui/register` receive `ROLE_USER`. This role covers the full charging workflow:
+
+- Manage your vehicles (`/vehicles`)
+- Discover and view charging stations (`/stations`, `/stations/discovery`)
+- View charger details (`/chargers`, `/stations/{id}/chargers`)
+- Create and view reservations (`/reservations`)
+- Start and end charging sessions (`/sessions`)
+
+### ROLE_ADMIN
+
+Admin accounts are provisioned by the platform — you cannot self-register as an admin. In addition to everything a standard user can do, admins can:
+
+- Create, update, and delete stations (`POST /stations`, `PUT /stations/{id}`, `DELETE /stations/{id}`)
+- Create, update, and delete chargers (`POST /chargers`, `PUT /chargers/{id}`, `DELETE /chargers/{id}`)
+- Delete reservations (`DELETE /reservations/{id}`)
+- List all user accounts (`GET /users`)
+- Access the Swagger UI at [https://charge-go.duckdns.org/swagger-ui.html](https://charge-go.duckdns.org/swagger-ui.html)
+
+<Note>
+  The `GET /users` endpoint returns account metadata only. Passwords are never exposed through the API.
+</Note>
+
+**Example — listing users as an admin:**
+
+<CodeGroup>
+  ```bash curl
+  curl -X GET https://charge-go.duckdns.org/users \
+    -u adminUsername:adminPassword
+  ```
+</CodeGroup>
+
+```json
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "role": "ROLE_ADMIN",
+    "enabled": true
+  },
+  {
+    "id": 2,
+    "username": "jane",
+    "role": "ROLE_USER",
+    "enabled": true
+  }
+]
+```
+
+## Public endpoints
+
+A small number of endpoints are accessible without any credentials:
+
+| Path | Description |
+|---|---|
+| `GET /ui/login` | Web login form |
+| `GET /ui/register` | Web registration form |
+| `POST /ui/register` | Submit a new registration |
+| `GET /actuator/health` | Platform health check |
+
+All other endpoints require a valid authenticated account.

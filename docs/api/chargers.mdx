@@ -1,0 +1,315 @@
+---
+title: "Chargers API — manage individual charging units"
+description: "Retrieve details about specific charger units, and — for admins — create, update, or remove chargers linked to a charging station in the ChargeGo network."
+---
+
+The Chargers API exposes each individual charging unit in the ChargeGo network. A charger is always associated with a station and carries its own connector type, power output, pricing, and availability status. Any authenticated user can read charger data; creating, updating, and deleting chargers requires the admin role. All endpoints require HTTP Basic Auth.
+
+<Note>
+  The `POST /chargers`, `PUT /chargers/{id}`, and `DELETE /chargers/{id}` endpoints require an account with the **admin** role. Requests from non-admin accounts will receive a `403 Forbidden` response.
+</Note>
+
+## The charger object
+
+<ResponseField name="id" type="number">
+  The unique ID assigned to the charger.
+</ResponseField>
+
+<ResponseField name="chargerCode" type="string">
+  A human-readable code identifying the charger unit, e.g., `DC-50-03`.
+</ResponseField>
+
+<ResponseField name="chargerType" type="string">
+  The electrical current type. One of: `AC`, `DC`.
+</ResponseField>
+
+<ResponseField name="powerOutput" type="string">
+  The rated power output. One of: `KW_22` (22 kW), `KW_50` (50 kW), `KW_150` (150 kW).
+</ResponseField>
+
+<ResponseField name="connectorType" type="string">
+  The connector standard used by this charger. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ResponseField>
+
+<ResponseField name="pricePerKwh" type="number">
+  The price charged to the user per kWh consumed.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current availability status of the charger. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ResponseField>
+
+<ResponseField name="stationId" type="number">
+  The ID of the station this charger belongs to.
+</ResponseField>
+
+---
+
+## List all chargers
+
+<br />
+
+`GET /chargers`
+
+Returns an array of every charger unit across all stations. Responds with `200 OK`.
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/chargers \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 1,
+    "chargerCode": "DC-50-03",
+    "chargerType": "DC",
+    "powerOutput": "KW_150",
+    "connectorType": "CCS",
+    "pricePerKwh": 5.5,
+    "status": "AVAILABLE",
+    "stationId": 1
+  },
+  {
+    "id": 2,
+    "chargerCode": "DC-50-02",
+    "chargerType": "DC",
+    "powerOutput": "KW_150",
+    "connectorType": "CCS",
+    "pricePerKwh": 5.5,
+    "status": "AVAILABLE",
+    "stationId": 1
+  },
+  {
+    "id": 4,
+    "chargerCode": "AC-52-01",
+    "chargerType": "AC",
+    "powerOutput": "KW_22",
+    "connectorType": "TYPE2",
+    "pricePerKwh": 3.0,
+    "status": "AVAILABLE",
+    "stationId": 1
+  }
+]
+```
+
+---
+
+## Get a charger by ID
+
+<br />
+
+`GET /chargers/{id}`
+
+Returns a single charger record. Responds with `200 OK`, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the charger. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/chargers/1 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 1,
+  "chargerCode": "DC-50-03",
+  "chargerType": "DC",
+  "powerOutput": "KW_150",
+  "connectorType": "CCS",
+  "pricePerKwh": 5.5,
+  "status": "AVAILABLE",
+  "stationId": 1
+}
+```
+
+---
+
+## Create a charger
+
+<br />
+
+`POST /chargers` — **Admin only**
+
+Creates a new charger and links it to an existing station. Responds with `201 Created`.
+
+### Request body
+
+<ParamField body="chargerCode" type="string" required>
+  A unique human-readable identifier for the charger unit, e.g., `CHG-1001`.
+</ParamField>
+
+<ParamField body="chargerType" type="string" required>
+  The electrical current type. One of: `AC`, `DC`.
+</ParamField>
+
+<ParamField body="powerOutput" type="string" required>
+  The rated power output level. One of: `KW_22`, `KW_50`, `KW_150`.
+</ParamField>
+
+<ParamField body="connectorType" type="string" required>
+  The connector standard. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ParamField>
+
+<ParamField body="pricePerKwh" type="number" required>
+  Price per kWh in local currency. Must be greater than zero.
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  Initial availability status. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ParamField>
+
+<ParamField body="stationId" type="number" required>
+  The ID of the station this charger will belong to. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://charge-go.duckdns.org/chargers \
+  -u admin:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chargerCode": "CHG-1001",
+    "chargerType": "DC",
+    "powerOutput": "KW_150",
+    "connectorType": "CCS",
+    "pricePerKwh": 11.99,
+    "status": "AVAILABLE",
+    "stationId": 1
+  }'
+```
+
+</CodeGroup>
+
+```json Response (201 Created)
+{
+  "id": 42,
+  "chargerCode": "CHG-1001",
+  "chargerType": "DC",
+  "powerOutput": "KW_150",
+  "connectorType": "CCS",
+  "pricePerKwh": 11.99,
+  "status": "AVAILABLE",
+  "stationId": 1
+}
+```
+
+---
+
+## Update a charger
+
+<br />
+
+`PUT /chargers/{id}` — **Admin only**
+
+Updates one or more fields on an existing charger. Only the fields included in the request body are changed; omitted fields retain their current values. Responds with `200 OK`.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the charger to update. Must be greater than zero.
+</ParamField>
+
+### Request body
+
+All fields are optional.
+
+<ParamField body="chargerCode" type="string">
+  Updated charger unit code.
+</ParamField>
+
+<ParamField body="chargerType" type="string">
+  Updated current type. One of: `AC`, `DC`.
+</ParamField>
+
+<ParamField body="powerOutput" type="string">
+  Updated power output level. One of: `KW_22`, `KW_50`, `KW_150`.
+</ParamField>
+
+<ParamField body="connectorType" type="string">
+  Updated connector standard. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ParamField>
+
+<ParamField body="pricePerKwh" type="number">
+  Updated price per kWh. Must be greater than zero.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Updated availability status. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ParamField>
+
+<ParamField body="stationId" type="number">
+  Reassign this charger to a different station by providing a new station ID. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X PUT https://charge-go.duckdns.org/chargers/42 \
+  -u admin:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chargerCode": "CHG-1002",
+    "powerOutput": "KW_50",
+    "connectorType": "TYPE2",
+    "pricePerKwh": 9.50,
+    "status": "OCCUPIED"
+  }'
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 42,
+  "chargerCode": "CHG-1002",
+  "chargerType": "DC",
+  "powerOutput": "KW_50",
+  "connectorType": "TYPE2",
+  "pricePerKwh": 9.5,
+  "status": "OCCUPIED",
+  "stationId": 1
+}
+```
+
+---
+
+## Delete a charger
+
+<br />
+
+`DELETE /chargers/{id}` — **Admin only**
+
+Permanently removes a charger unit. Responds with `204 No Content` on success, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the charger to delete. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://charge-go.duckdns.org/chargers/42 \
+  -u admin:password
+```
+
+</CodeGroup>
+
+```
+Response: 204 No Content
+```

@@ -1,0 +1,470 @@
+---
+title: "Stations API — browse and manage charging locations"
+description: "Browse, filter, and manage EV charging stations by connector type, power output, price, and status. Includes distance sorting when you provide your location."
+---
+
+The Stations API lets you browse and manage the physical charging locations in the ChargeGo network. Public users can list stations, retrieve details, discover stations using rich filters, and inspect the chargers at a given location. Creating, updating, and deleting stations requires admin privileges. All endpoints require HTTP Basic Auth.
+
+<Note>
+  The `POST /stations`, `PUT /stations/{id}`, and `DELETE /stations/{id}` endpoints require an account with the **admin** role. Requests from non-admin accounts will receive a `403 Forbidden` response.
+</Note>
+
+## The station object
+
+<ResponseField name="id" type="number">
+  The unique ID assigned to the station.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  A human-readable name for the station, e.g., `Kadikoy Fast Charge`.
+</ResponseField>
+
+<ResponseField name="address" type="string">
+  The street address of the station, e.g., `Caferaga, Kadikoy / Istanbul`.
+</ResponseField>
+
+<ResponseField name="latitude" type="number">
+  The WGS-84 latitude coordinate of the station.
+</ResponseField>
+
+<ResponseField name="longitude" type="number">
+  The WGS-84 longitude coordinate of the station.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The operational status of the station. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ResponseField>
+
+---
+
+## List all stations
+
+<br />
+
+`GET /stations`
+
+Returns an array of all station records. Responds with `200 OK`.
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/stations \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 1,
+    "name": "Karşıyaka Hub",
+    "address": "Karşıyaka, İzmir",
+    "latitude": 38.4589,
+    "longitude": 27.1143,
+    "status": "AVAILABLE"
+  },
+  {
+    "id": 2,
+    "name": "Bornova Station",
+    "address": "Bornova, İzmir",
+    "latitude": 38.4681,
+    "longitude": 27.2153,
+    "status": "AVAILABLE"
+  }
+]
+```
+
+---
+
+## Get a station by ID
+
+<br />
+
+`GET /stations/{id}`
+
+Returns a single station record. Responds with `200 OK`, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the station. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/stations/1 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 1,
+  "name": "Karşıyaka Hub",
+  "address": "Karşıyaka, İzmir",
+  "latitude": 38.4589,
+  "longitude": 27.1143,
+  "status": "AVAILABLE"
+}
+```
+
+---
+
+## List chargers at a station
+
+<br />
+
+`GET /stations/{id}/chargers`
+
+Returns all charger units that belong to a given station. Responds with `200 OK`.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the station. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/stations/1/chargers \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 1,
+    "chargerCode": "DC-50-03",
+    "chargerType": "DC",
+    "powerOutput": "KW_150",
+    "connectorType": "CCS",
+    "pricePerKwh": 5.5,
+    "status": "AVAILABLE",
+    "stationId": 1
+  },
+  {
+    "id": 4,
+    "chargerCode": "AC-52-01",
+    "chargerType": "AC",
+    "powerOutput": "KW_22",
+    "connectorType": "TYPE2",
+    "pricePerKwh": 3.0,
+    "status": "AVAILABLE",
+    "stationId": 1
+  }
+]
+```
+
+---
+
+## Discover stations
+
+<br />
+
+`GET /stations/discovery`
+
+Returns a filtered list of stations enriched with real-time charger availability, pricing summary, supported connector types, and — when you provide your coordinates — distance from your location calculated using the Haversine formula. All query parameters are optional; omitting all of them returns every station.
+
+### Query parameters
+
+<ParamField query="connectorType" type="string">
+  Filter stations to those with at least one charger of this connector type. One of: `CCS`, `TYPE2`, `CHADEMO`.
+</ParamField>
+
+<ParamField query="powerOutput" type="string">
+  Filter stations to those with at least one charger of this power level. One of: `KW_22`, `KW_50`, `KW_150`.
+</ParamField>
+
+<ParamField query="maxPricePerKwh" type="number">
+  Filter stations to those whose minimum charger price does not exceed this value (in local currency per kWh).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by station operational status. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ParamField>
+
+<ParamField query="userLatitude" type="number">
+  Your current latitude in WGS-84 decimal degrees. When provided together with `userLongitude`, each result includes a `distanceKm` field.
+</ParamField>
+
+<ParamField query="userLongitude" type="number">
+  Your current longitude in WGS-84 decimal degrees. Required alongside `userLatitude` to receive distance data.
+</ParamField>
+
+### Discovery response fields
+
+<ResponseField name="id" type="number">
+  The unique ID of the station.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable station name.
+</ResponseField>
+
+<ResponseField name="address" type="string">
+  Street address of the station.
+</ResponseField>
+
+<ResponseField name="latitude" type="number">
+  WGS-84 latitude of the station.
+</ResponseField>
+
+<ResponseField name="longitude" type="number">
+  WGS-84 longitude of the station.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Derived real-time status based on charger availability: `AVAILABLE` if any charger is free, `OCCUPIED` if all chargers are in use, or `OFFLINE` if the station is offline.
+</ResponseField>
+
+<ResponseField name="totalChargerCount" type="number">
+  Total number of charger units at this station.
+</ResponseField>
+
+<ResponseField name="availableChargerCount" type="number">
+  Number of charger units currently in `AVAILABLE` status.
+</ResponseField>
+
+<ResponseField name="minPricePerKwh" type="number">
+  The lowest price per kWh among all chargers at this station.
+</ResponseField>
+
+<ResponseField name="connectorTypes" type="array">
+  List of distinct connector types offered at this station, e.g., `["CCS", "TYPE2"]`.
+</ResponseField>
+
+<ResponseField name="powerOutputs" type="array">
+  List of distinct power output levels available at this station, e.g., `["KW_22", "KW_150"]`.
+</ResponseField>
+
+<ResponseField name="distanceKm" type="number">
+  Distance from your provided coordinates to this station in kilometres, rounded to two decimal places. Only present when `userLatitude` and `userLongitude` are supplied.
+</ResponseField>
+
+<ResponseField name="chargers" type="array">
+  Array of charger summaries for this station. Each object contains `id`, `chargerCode`, `chargerType`, `powerOutput`, `connectorType`, `pricePerKwh`, and `status`.
+</ResponseField>
+
+<CodeGroup>
+
+```bash Filter by connector type
+curl "https://charge-go.duckdns.org/stations/discovery?connectorType=CCS" \
+  -u username:password
+```
+
+```bash Filter by power and price
+curl "https://charge-go.duckdns.org/stations/discovery?powerOutput=KW_150&maxPricePerKwh=6.0" \
+  -u username:password
+```
+
+```bash With distance from your location
+curl "https://charge-go.duckdns.org/stations/discovery?userLatitude=38.4237&userLongitude=27.1428" \
+  -u username:password
+```
+
+```bash All filters combined
+curl "https://charge-go.duckdns.org/stations/discovery?connectorType=CCS&powerOutput=KW_50&maxPricePerKwh=5.0&status=AVAILABLE&userLatitude=38.4237&userLongitude=27.1428" \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 1,
+    "name": "Karşıyaka Hub",
+    "address": "Karşıyaka, İzmir",
+    "latitude": 38.4589,
+    "longitude": 27.1143,
+    "status": "AVAILABLE",
+    "totalChargerCount": 7,
+    "availableChargerCount": 7,
+    "minPricePerKwh": 3.0,
+    "connectorTypes": ["CCS", "TYPE2", "CHADEMO"],
+    "powerOutputs": ["KW_150", "KW_50", "KW_22"],
+    "distanceKm": 4.12,
+    "chargers": [
+      {
+        "id": 1,
+        "chargerCode": "DC-50-03",
+        "chargerType": "DC",
+        "powerOutput": "KW_150",
+        "connectorType": "CCS",
+        "pricePerKwh": 5.5,
+        "status": "AVAILABLE"
+      },
+      {
+        "id": 4,
+        "chargerCode": "AC-52-01",
+        "chargerType": "AC",
+        "powerOutput": "KW_22",
+        "connectorType": "TYPE2",
+        "pricePerKwh": 3.0,
+        "status": "AVAILABLE"
+      }
+    ]
+  }
+]
+```
+
+---
+
+## Create a station
+
+<br />
+
+`POST /stations` — **Admin only**
+
+Creates a new charging station. Responds with `201 Created`.
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  A human-readable name for the station.
+</ParamField>
+
+<ParamField body="address" type="string" required>
+  The full street address of the station.
+</ParamField>
+
+<ParamField body="latitude" type="number" required>
+  WGS-84 latitude of the station location.
+</ParamField>
+
+<ParamField body="longitude" type="number" required>
+  WGS-84 longitude of the station location.
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  Initial operational status. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://charge-go.duckdns.org/stations \
+  -u admin:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Kadikoy Fast Charge",
+    "address": "Caferaga, Kadikoy / Istanbul",
+    "latitude": 40.9909,
+    "longitude": 29.0277,
+    "status": "AVAILABLE"
+  }'
+```
+
+</CodeGroup>
+
+```json Response (201 Created)
+{
+  "id": 6,
+  "name": "Kadikoy Fast Charge",
+  "address": "Caferaga, Kadikoy / Istanbul",
+  "latitude": 40.9909,
+  "longitude": 29.0277,
+  "status": "AVAILABLE"
+}
+```
+
+---
+
+## Update a station
+
+<br />
+
+`PUT /stations/{id}` — **Admin only**
+
+Updates one or more fields on an existing station. Only the fields included in the request body are changed. Responds with `200 OK`.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the station to update. Must be greater than zero.
+</ParamField>
+
+### Request body
+
+All fields are optional.
+
+<ParamField body="name" type="string">
+  Updated station name.
+</ParamField>
+
+<ParamField body="address" type="string">
+  Updated street address.
+</ParamField>
+
+<ParamField body="latitude" type="number">
+  Updated latitude coordinate.
+</ParamField>
+
+<ParamField body="longitude" type="number">
+  Updated longitude coordinate.
+</ParamField>
+
+<ParamField body="status" type="string">
+  Updated operational status. One of: `AVAILABLE`, `OCCUPIED`, `OFFLINE`.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X PUT https://charge-go.duckdns.org/stations/6 \
+  -u admin:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Besiktas Supercharge",
+    "address": "Sinanpasa, Besiktas / Istanbul",
+    "status": "OCCUPIED"
+  }'
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 6,
+  "name": "Besiktas Supercharge",
+  "address": "Sinanpasa, Besiktas / Istanbul",
+  "latitude": 40.9909,
+  "longitude": 29.0277,
+  "status": "OCCUPIED"
+}
+```
+
+---
+
+## Delete a station
+
+<br />
+
+`DELETE /stations/{id}` — **Admin only**
+
+Permanently removes a station. Responds with `204 No Content` on success, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the station to delete. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://charge-go.duckdns.org/stations/6 \
+  -u admin:password
+```
+
+</CodeGroup>
+
+```
+Response: 204 No Content
+```

@@ -1,0 +1,116 @@
+---
+title: "EV connector types supported by ChargeGo"
+description: "Learn which connector standards, charger types, and power outputs ChargeGo supports, and how connector compatibility is enforced when you make a reservation."
+---
+
+ChargeGo supports three EV connector standards across two charger types and three power output levels. Understanding your vehicle's connector type is important before booking — ChargeGo enforces a strict connector match between your registered vehicle and the charger you select. Choosing the wrong charger will result in a failed reservation request, so it helps to know which standard your vehicle uses before you search for a station.
+
+## Supported connector types
+
+ChargeGo recognizes the following values for `connectorType` on both vehicles and chargers:
+
+| Connector type | API value | Current type | Typical vehicles |
+|---|---|---|---|
+| Combined Charging System | `CCS` | DC | Tesla (non-Supercharger), Hyundai, Kia, Audi, BMW (select models), Porsche, Volkswagen Group |
+| IEC 62196 Type 2 | `TYPE2` | AC | BMW, Renault, Mini, Volvo, Peugeot |
+| CHAdeMO | `CHADEMO` | DC | Nissan Leaf, older Mitsubishi EVs |
+
+<AccordionGroup>
+  <Accordion title="CCS — Combined Charging System">
+    CCS is a DC fast-charging standard that combines an AC Type 2 inlet with two additional DC pins below it. It is the dominant fast-charging standard across North America and Europe for most non-Tesla vehicles produced after 2020.
+
+    **API value:** `CCS`
+
+    **Compatible charger type:** `DC`
+
+    **Common vehicles:** Tesla (using a CCS adapter or non-Supercharger networks), Hyundai IONIQ 5 / IONIQ 6, Kia EV6, Audi e-tron, Porsche Taycan, Volkswagen ID.4, BMW iX (select models)
+
+    When you register a vehicle with `connectorType: "CCS"`, you can only reserve chargers that also have `connectorType: "CCS"`. Power outputs available on CCS chargers include `KW_50` (50 kW) and `KW_150` (150 kW).
+  </Accordion>
+
+  <Accordion title="TYPE2 — IEC 62196 Type 2">
+    Type 2 is the standard AC charging connector used across Europe. It supports single-phase and three-phase AC charging and is the most common connector for overnight and workplace charging in European markets.
+
+    **API value:** `TYPE2`
+
+    **Compatible charger type:** `AC`
+
+    **Common vehicles:** BMW i3, BMW i4, Renault Zoe, Mini Electric, Volvo XC40 Recharge, Peugeot e-208
+
+    Type 2 chargers in ChargeGo are available at the `KW_22` (22 kW) power output level, suitable for destination charging and overnight sessions of up to 2 hours.
+  </Accordion>
+
+  <Accordion title="CHADEMO">
+    CHAdeMO is a DC fast-charging standard developed in Japan. It was one of the first DC fast-charging protocols but has seen declining adoption in new vehicle models outside of Japan. Existing Nissan Leaf owners and early Mitsubishi EV owners will continue to use this standard.
+
+    **API value:** `CHADEMO`
+
+    **Compatible charger type:** `DC`
+
+    **Common vehicles:** Nissan Leaf (2011–present), Mitsubishi i-MiEV, older Mitsubishi Outlander PHEV
+
+    CHAdeMO chargers in ChargeGo support `KW_50` (50 kW) power output.
+  </Accordion>
+</AccordionGroup>
+
+## Charger types
+
+Each charger in ChargeGo has a `chargerType` field that indicates whether it delivers alternating or direct current:
+
+| Charger type | API value | Description |
+|---|---|---|
+| Alternating Current | `AC` | Slower charging; power is converted to DC inside the vehicle. Suited for longer stays. |
+| Direct Current | `DC` | Fast charging; power is converted outside the vehicle and delivered directly to the battery. |
+
+The `chargerType` value on a charger is informational — ChargeGo uses `connectorType` (not `chargerType`) to enforce compatibility when you create a reservation.
+
+## Available power outputs
+
+ChargeGo chargers are configured with one of three power output levels:
+
+| API value | Power | Typical use case |
+|---|---|---|
+| `KW_22` | 22 kW | AC destination charging, workplace charging |
+| `KW_50` | 50 kW | DC fast charging, en-route top-up |
+| `KW_150` | 150 kW | DC rapid charging, highway corridors |
+
+<Tip>
+  A 22 kW AC charger cannot fully charge most vehicles within a 2-hour reservation window — it will add approximately 44 kWh in that time. Plan your reservation duration based on your vehicle's battery capacity and current charge level.
+</Tip>
+
+## How connector compatibility works
+
+When you submit a reservation request, ChargeGo compares the `connectorType` on your registered vehicle against the `connectorType` of the selected charger. Both values must match exactly. There is no adapter or fallback logic — the check is strict.
+
+The compatibility check runs in this order when you call `POST /reservations`:
+
+1. ChargeGo looks up the vehicle by `vehicleId` and verifies you own it.
+2. ChargeGo looks up the charger by `chargerId`.
+3. Your vehicle's `connectorType` is compared to the charger's `connectorType`.
+4. If they differ, the request is rejected before any time-overlap or availability checks run.
+
+<Warning>
+  If your vehicle's `connectorType` does not match the charger's `connectorType`, ChargeGo returns a **400 Bad Request** with the message `"Vehicle connector type is not compatible with the charger."` The reservation is not created. Make sure the charger you select supports your vehicle's connector standard before submitting a booking.
+</Warning>
+
+### Example: successful compatibility
+
+Your registered vehicle has `connectorType: "CCS"`. You select a charger with `connectorType: "CCS"` and `powerOutput: "KW_150"`. The compatibility check passes and ChargeGo proceeds to verify the charger is available and the time slot is free.
+
+### Example: incompatible connector
+
+Your registered vehicle has `connectorType: "CHADEMO"`. You select a charger with `connectorType: "CCS"`. ChargeGo immediately rejects the request with a 400 error. You need to find a charger with `connectorType: "CHADEMO"` instead.
+
+## Setting your vehicle's connector type
+
+When registering a vehicle via `POST /vehicles`, you must supply `connectorType` as one of the three accepted values. Submitting an unrecognized value (for example, `"TYPE1"` or `"GBT"`) returns a **400 Bad Request** with the message `"Malformed JSON request or invalid enum value."` The accepted values are case-sensitive: `CCS`, `TYPE2`, and `CHADEMO`.
+
+```json
+{
+  "brand": "Nissan",
+  "model": "Leaf",
+  "batteryCapacity": 40.0,
+  "connectorType": "CHADEMO",
+  "plateNumber": "34XYZ789"
+}
+```

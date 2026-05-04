@@ -1,0 +1,168 @@
+---
+title: "Charging stations and chargers explained"
+description: "Learn how ChargeGo organises stations and chargers, what each status means, and how to filter discovery results to find the right charging location."
+---
+
+ChargeGo organises charging infrastructure into two levels: a **station** is the physical site (a car park, a motorway services, a retail forecourt), and a **charger** is the individual charging unit within that site. When you search for somewhere to charge, you browse stations first and then pick the specific charger you want to reserve.
+
+## Stations
+
+A station represents a real-world location. Every station has the following attributes:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | integer | Unique identifier. |
+| `name` | string | Human-readable location name. Unique across all stations. |
+| `address` | string | Street address of the site. |
+| `latitude` | number | GPS latitude coordinate. |
+| `longitude` | number | GPS longitude coordinate. |
+| `status` | enum | Overall operational status: `AVAILABLE`, `OCCUPIED`, or `OFFLINE`. |
+
+### Station statuses
+
+<AccordionGroup>
+  <Accordion title="AVAILABLE">
+    At least one charger at the station has a status of `AVAILABLE`. You can make a reservation here right now.
+  </Accordion>
+  <Accordion title="OCCUPIED">
+    The station is operational but all chargers are currently in use (`OCCUPIED`). No charger is available for immediate booking, though future time slots may still be open.
+  </Accordion>
+  <Accordion title="OFFLINE">
+    The station has been taken offline by an administrator. Chargers at an offline station cannot be reserved.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+The `status` field in discovery results is **derived** — it reflects the live state of the station's chargers, not just a stored flag. If any charger is `AVAILABLE`, the station shows `AVAILABLE`. If the station itself is set to `OFFLINE`, that takes precedence regardless of individual charger states.
+</Note>
+
+## Chargers
+
+Each station contains one or more chargers. A charger is the unit you actually reserve. Charger attributes are:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | integer | Unique identifier. |
+| `chargerCode` | string | Human-readable code for the physical unit, e.g. `CHG-001`. |
+| `chargerType` | enum | Charging technology: `AC` or `DC`. |
+| `powerOutput` | enum | Rated power: `KW_22` (22 kW), `KW_50` (50 kW), or `KW_150` (150 kW). |
+| `connectorType` | enum | Physical connector standard: `CCS`, `TYPE2`, or `CHADEMO`. |
+| `pricePerKwh` | number | Cost per kWh charged at this unit. |
+| `status` | enum | Availability: `AVAILABLE`, `OCCUPIED`, or `OFFLINE`. |
+
+### Charger statuses
+
+| Status | Meaning |
+|---|---|
+| `AVAILABLE` | Ready to accept a new reservation. |
+| `OCCUPIED` | A charging session is active. The charger is in use. |
+| `OFFLINE` | The charger is out of service. Cannot be reserved. |
+
+<Warning>
+Only chargers with a status of `AVAILABLE` can be reserved. Attempting to book an `OCCUPIED` or `OFFLINE` charger will return a `409 Conflict` error.
+</Warning>
+
+### Power output and charging speed
+
+The `powerOutput` field tells you how fast the charger can deliver energy. Higher power means a shorter session to add the same amount of charge.
+
+| Value | Power | Typical charge type |
+|---|---|---|
+| `KW_22` | 22 kW | AC — slower, suitable for longer stays |
+| `KW_50` | 50 kW | DC — rapid charging |
+| `KW_150` | 150 kW | DC — ultra-rapid charging |
+
+## Station → charger relationship
+
+A station owns many chargers. In the discovery response, each station object embeds a `chargers` array so you can evaluate all the units at a site in a single response.
+
+```text
+Station
+└── Charger (chargerCode: CHG-001, type: DC, powerOutput: KW_150, connectorType: CCS)
+└── Charger (chargerCode: CHG-002, type: AC, powerOutput: KW_22, connectorType: TYPE2)
+└── Charger (chargerCode: CHG-003, type: DC, powerOutput: KW_50, connectorType: CHADEMO)
+```
+
+The station-level summary fields (`totalChargerCount`, `availableChargerCount`, `connectorTypes`, `powerOutputs`, `minPricePerKwh`) are aggregated from its chargers so you can filter without inspecting each unit individually.
+
+## Discovering stations
+
+Use `GET /stations/discovery` to find stations. All filter parameters are optional — omit any you don't need.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `connectorType` | enum | Only return stations with at least one charger matching `CCS`, `TYPE2`, or `CHADEMO`. |
+| `powerOutput` | enum | Only return stations with at least one charger at `KW_22`, `KW_50`, or `KW_150`. |
+| `maxPricePerKwh` | number | Only return stations whose cheapest charger is at or below this price. |
+| `status` | enum | Filter by derived station status (`AVAILABLE`, `OCCUPIED`, `OFFLINE`). |
+| `userLatitude` | number | Your current GPS latitude. Required for distance-sorted results. |
+| `userLongitude` | number | Your current GPS longitude. Required for distance-sorted results. |
+
+When you provide `userLatitude` and `userLongitude`, results are sorted by straight-line distance from your position (closest first), calculated using the Haversine formula. Without coordinates, results are returned in alphabetical order by station name.
+
+### Example discovery request
+
+```http request
+GET /stations/discovery?connectorType=CCS&maxPricePerKwh=0.45&userLatitude=41.0082&userLongitude=28.9784
+```
+
+### Example discovery response
+
+```json response
+{
+  "id": 7,
+  "name": "Levent Charging Hub",
+  "address": "Büyükdere Cad. No:12, Levent, Istanbul",
+  "latitude": 41.0789,
+  "longitude": 29.0134,
+  "status": "AVAILABLE",
+  "totalChargerCount": 4,
+  "availableChargerCount": 2,
+  "minPricePerKwh": 0.38,
+  "connectorTypes": ["CCS", "TYPE2"],
+  "powerOutputs": ["KW_50", "KW_150"],
+  "distanceKm": 7.83,
+  "chargers": [
+    {
+      "id": 21,
+      "chargerCode": "LVT-001",
+      "chargerType": "DC",
+      "powerOutput": "KW_150",
+      "connectorType": "CCS",
+      "pricePerKwh": 0.38,
+      "status": "AVAILABLE"
+    },
+    {
+      "id": 22,
+      "chargerCode": "LVT-002",
+      "chargerType": "DC",
+      "powerOutput": "KW_50",
+      "connectorType": "CCS",
+      "pricePerKwh": 0.42,
+      "status": "OCCUPIED"
+    },
+    {
+      "id": 23,
+      "chargerCode": "LVT-003",
+      "chargerType": "AC",
+      "powerOutput": "KW_22",
+      "connectorType": "TYPE2",
+      "pricePerKwh": 0.35,
+      "status": "AVAILABLE"
+    }
+  ]
+}
+```
+
+<Tip>
+Filter by your vehicle's `connectorType` in every discovery request. This narrows results to stations where you can actually plug in, and saves you from finding a perfect slot only to discover it uses the wrong connector standard.
+</Tip>
+
+<CardGroup cols={2}>
+  <Card title="Register your vehicle" icon="car" href="/concepts/vehicles">
+    You need a vehicle with the right connector type before making a reservation.
+  </Card>
+  <Card title="Make a reservation" icon="calendar" href="/concepts/reservations">
+    Pick a charger ID from the discovery results and book a time window.
+  </Card>
+</CardGroup>

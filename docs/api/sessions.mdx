@@ -1,0 +1,287 @@
+---
+title: "Sessions API — start and end charging sessions"
+description: "Start a charging session against a reservation, end it to trigger cost calculation, and retrieve session records with energy consumption and total cost."
+---
+
+The Sessions API controls the charging session lifecycle. Once a reservation's start time has arrived, you can start a session by referencing the reservation ID and optionally providing your vehicle's current battery level. When charging is complete, end the session by supplying the final battery level — ChargeGo will calculate the energy consumed and the total cost. All endpoints require HTTP Basic Auth.
+
+## The session object
+
+<ResponseField name="id" type="number">
+  The unique ID assigned to the charging session.
+</ResponseField>
+
+<ResponseField name="reservationId" type="number">
+  The ID of the reservation this session was started for.
+</ResponseField>
+
+<ResponseField name="chargerId" type="number">
+  The ID of the charger used during this session.
+</ResponseField>
+
+<ResponseField name="startBatteryLevel" type="number">
+  The battery state of charge at session start, as a percentage (0–100). `null` if not provided when starting.
+</ResponseField>
+
+<ResponseField name="endBatteryLevel" type="number">
+  The battery state of charge at session end, as a percentage (0–100). `null` until the session is ended.
+</ResponseField>
+
+<ResponseField name="chargedPercentage" type="number">
+  The percentage points of charge added during the session (`endBatteryLevel - startBatteryLevel`). `null` if either battery level is unavailable.
+</ResponseField>
+
+<ResponseField name="startEnergyKwh" type="number">
+  The absolute energy stored in the battery at session start in kWh, calculated as `batteryCapacity × startBatteryLevel / 100`. `null` if `startBatteryLevel` was not provided.
+</ResponseField>
+
+<ResponseField name="endEnergyKwh" type="number">
+  The absolute energy stored in the battery at session end in kWh, calculated as `batteryCapacity × endBatteryLevel / 100`. `null` until the session is ended.
+</ResponseField>
+
+<ResponseField name="consumedKwh" type="number">
+  Total energy delivered to the vehicle during this session in kWh. Populated after the session ends.
+</ResponseField>
+
+<ResponseField name="unitPricePerKwh" type="number">
+  The charger's price per kWh at the time of the session.
+</ResponseField>
+
+<ResponseField name="totalCost" type="number">
+  The total cost of the session (`consumedKwh × unitPricePerKwh`). Populated after the session ends.
+</ResponseField>
+
+<ResponseField name="startedAt" type="string">
+  The ISO 8601 datetime when the session was started.
+</ResponseField>
+
+<ResponseField name="endedAt" type="string">
+  The ISO 8601 datetime when the session was ended. `null` while the session is still active.
+</ResponseField>
+
+<ResponseField name="reservationStartTime" type="string">
+  The scheduled start time from the associated reservation.
+</ResponseField>
+
+<ResponseField name="reservationEndTime" type="string">
+  The scheduled end time from the associated reservation.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The session lifecycle status. One of: `ACTIVE`, `COMPLETED`.
+</ResponseField>
+
+---
+
+## Energy consumption and cost calculation
+
+ChargeGo calculates energy and cost using the battery levels you report and the vehicle's registered battery capacity:
+
+- **`startEnergyKwh`** = `batteryCapacity × (startBatteryLevel / 100)`
+- **`endEnergyKwh`** = `batteryCapacity × (endBatteryLevel / 100)`
+- **`consumedKwh`** = `endEnergyKwh - startEnergyKwh`
+- **`totalCost`** = `consumedKwh × charger.pricePerKwh`
+
+**Example:** A Tesla Model 3 (75 kWh battery) charges from 20% to 65% on a charger priced at 5.50 per kWh:
+
+- `startEnergyKwh` = 75 × 0.20 = 15.00 kWh
+- `endEnergyKwh` = 75 × 0.65 = 48.75 kWh
+- `consumedKwh` = 48.75 − 15.00 = 33.75 kWh
+- `totalCost` = 33.75 × 5.50 = **185.63**
+
+All energy values are rounded to two decimal places.
+
+---
+
+## Start a charging session
+
+<br />
+
+`POST /sessions/start`
+
+Starts a charging session for a reservation. The reservation must be in `ACTIVE` or `IN_PROGRESS` status and its `startTime` must have arrived. Responds with `200 OK` and returns the new session object.
+
+### Query parameters
+
+<ParamField query="reservationId" type="number" required>
+  The ID of the reservation to start a session for. Must be greater than zero.
+</ParamField>
+
+<ParamField query="startBatteryLevel" type="number">
+  The vehicle's battery state of charge at session start, as a percentage between 0 and 100 (inclusive). Optional, but recommended for accurate energy and cost calculations.
+</ParamField>
+
+<CodeGroup>
+
+```bash With battery level
+curl -X POST "https://charge-go.duckdns.org/sessions/start?reservationId=7&startBatteryLevel=20" \
+  -u username:password
+```
+
+```bash Without battery level
+curl -X POST "https://charge-go.duckdns.org/sessions/start?reservationId=7" \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 4,
+  "reservationId": 7,
+  "chargerId": 3,
+  "startBatteryLevel": 20.0,
+  "endBatteryLevel": null,
+  "chargedPercentage": null,
+  "startEnergyKwh": 15.0,
+  "endEnergyKwh": null,
+  "consumedKwh": null,
+  "unitPricePerKwh": 4.0,
+  "totalCost": null,
+  "startedAt": "2026-05-10T10:03:45",
+  "endedAt": null,
+  "reservationStartTime": "2026-05-10T10:00:00",
+  "reservationEndTime": "2026-05-10T11:30:00",
+  "status": "ACTIVE"
+}
+```
+
+---
+
+## End a charging session
+
+<br />
+
+`POST /sessions/{id}/end`
+
+Ends an active charging session and calculates the energy consumed and total cost. The session must currently be in `ACTIVE` status. Responds with `200 OK` and returns the completed session object.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the session to end. Must be greater than zero.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="endBatteryLevel" type="number" required>
+  The vehicle's battery state of charge at session end, as a percentage between 0 and 100 (inclusive). Required to calculate consumed energy and total cost.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X POST "https://charge-go.duckdns.org/sessions/4/end?endBatteryLevel=65" \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 4,
+  "reservationId": 7,
+  "chargerId": 3,
+  "startBatteryLevel": 20.0,
+  "endBatteryLevel": 65.0,
+  "chargedPercentage": 45.0,
+  "startEnergyKwh": 15.0,
+  "endEnergyKwh": 48.75,
+  "consumedKwh": 33.75,
+  "unitPricePerKwh": 4.0,
+  "totalCost": 135.0,
+  "startedAt": "2026-05-10T10:03:45",
+  "endedAt": "2026-05-10T11:22:10",
+  "reservationStartTime": "2026-05-10T10:00:00",
+  "reservationEndTime": "2026-05-10T11:30:00",
+  "status": "COMPLETED"
+}
+```
+
+---
+
+## List all sessions
+
+<br />
+
+`GET /sessions`
+
+Returns an array of all charging sessions across all reservations. Responds with `200 OK`.
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/sessions \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 4,
+    "reservationId": 7,
+    "chargerId": 3,
+    "startBatteryLevel": 20.0,
+    "endBatteryLevel": 65.0,
+    "chargedPercentage": 45.0,
+    "startEnergyKwh": 15.0,
+    "endEnergyKwh": 48.75,
+    "consumedKwh": 33.75,
+    "unitPricePerKwh": 4.0,
+    "totalCost": 135.0,
+    "startedAt": "2026-05-10T10:03:45",
+    "endedAt": "2026-05-10T11:22:10",
+    "reservationStartTime": "2026-05-10T10:00:00",
+    "reservationEndTime": "2026-05-10T11:30:00",
+    "status": "COMPLETED"
+  }
+]
+```
+
+---
+
+## Get a session by ID
+
+<br />
+
+`GET /sessions/{id}`
+
+Returns a single charging session record. Responds with `200 OK`, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the session. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash Active session
+curl https://charge-go.duckdns.org/sessions/4 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK) — active session
+{
+  "id": 4,
+  "reservationId": 7,
+  "chargerId": 3,
+  "startBatteryLevel": 20.0,
+  "endBatteryLevel": null,
+  "chargedPercentage": null,
+  "startEnergyKwh": 15.0,
+  "endEnergyKwh": null,
+  "consumedKwh": null,
+  "unitPricePerKwh": 4.0,
+  "totalCost": null,
+  "startedAt": "2026-05-10T10:03:45",
+  "endedAt": null,
+  "reservationStartTime": "2026-05-10T10:00:00",
+  "reservationEndTime": "2026-05-10T11:30:00",
+  "status": "ACTIVE"
+}
+```

@@ -1,0 +1,107 @@
+---
+title: "Understanding vehicles in ChargeGo"
+description: "Learn how to register your EV, what fields ChargeGo stores for each vehicle, and why connector type determines charger compatibility."
+---
+
+Before you can book a charging slot, ChargeGo needs to know about your electric vehicle. A vehicle profile stores the details that the system uses to match your car to a compatible charger — most importantly, its connector type. Without at least one registered vehicle, the reservation flow will not let you proceed.
+
+## Vehicle fields
+
+Each vehicle record contains the following fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | integer | Unique identifier assigned by ChargeGo. |
+| `brand` | string | Manufacturer name, e.g. `Tesla`. |
+| `model` | string | Model name, e.g. `Model Y`. |
+| `batteryCapacity` | number (kWh) | Total usable battery capacity. Used to calculate energy consumed during a session. |
+| `connectorType` | enum | The physical connector standard your car uses. Must be one of `CCS`, `TYPE2`, or `CHADEMO`. |
+| `plateNumber` | string | Vehicle licence plate. Must be unique across all ChargeGo accounts. |
+
+<Note>
+`plateNumber` is enforced as globally unique. If you try to register a plate already in the system, the request will be rejected with a `409 Conflict` error.
+</Note>
+
+## Connector types
+
+ChargeGo supports three connector standards. Your vehicle's connector type must **exactly match** the charger's connector type when you make a reservation — the system enforces this automatically and will reject the booking if they differ.
+
+<AccordionGroup>
+  <Accordion title="CCS (Combined Charging System)">
+    CCS is a DC fast-charging standard widely adopted by European and American manufacturers, including vehicles from BMW, Ford, Hyundai, and Volkswagen. CCS chargers in ChargeGo can deliver up to 150 kW.
+  </Accordion>
+  <Accordion title="TYPE2 (IEC 62196 Type 2)">
+    TYPE2 is the dominant AC charging standard in Europe. It supports single- and three-phase AC charging and is the default connector on most new EVs sold in the EU. ChargeGo TYPE2 chargers operate at 22 kW AC.
+  </Accordion>
+  <Accordion title="CHAdeMO">
+    CHAdeMO is a DC fast-charging standard originating in Japan, used by Nissan, Mitsubishi, and some older Kia models. ChargeGo CHAdeMO chargers support up to 50 kW.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Setting the wrong connector type on your vehicle profile will cause every reservation attempt to fail with a compatibility error. Double-check your car's manual or the charging port before registering.
+</Warning>
+
+## Example vehicle object
+
+This is what a vehicle record looks like when returned from the API:
+
+```json vehicle response
+{
+  "id": 42,
+  "brand": "Tesla",
+  "model": "Model Y",
+  "batteryCapacity": 75.0,
+  "connectorType": "CCS",
+  "plateNumber": "34ABC123"
+}
+```
+
+## Managing your vehicles
+
+<Steps>
+  <Step title="Register a vehicle">
+    Send a `POST /vehicles` request with your vehicle's details. The `brand`, `model`, `batteryCapacity`, `connectorType`, and `plateNumber` fields are all required.
+
+    ```json request body
+    {
+      "brand": "Tesla",
+      "model": "Model Y",
+      "batteryCapacity": 75.0,
+      "connectorType": "CCS",
+      "plateNumber": "34ABC123"
+    }
+    ```
+  </Step>
+  <Step title="View your vehicles">
+    Send a `GET /vehicles` request to list all vehicles registered to your account. Use `GET /vehicles/{id}` to fetch a single record.
+  </Step>
+  <Step title="Update a vehicle">
+    Send a `PUT /vehicles/{id}` with only the fields you want to change. All fields are optional in an update request.
+  </Step>
+  <Step title="Delete a vehicle">
+    Send a `DELETE /vehicles/{id}`. ChargeGo will reject deletion if the vehicle has any reservation or charging session history attached to it.
+  </Step>
+</Steps>
+
+<Tip>
+You can register multiple vehicles under the same account — one for a personal car and one for a company fleet vehicle, for example. Each vehicle maintains its own reservation and session history.
+</Tip>
+
+## Why you must register a vehicle first
+
+ChargeGo uses your vehicle's `connectorType` and `batteryCapacity` at two different points in the workflow:
+
+- **At reservation time** — the system checks that your vehicle's `connectorType` matches the charger's `connectorType`. If they don't match, the reservation is blocked.
+- **At session end** — the system multiplies `batteryCapacity` by the percentage charged to calculate the exact kWh consumed and your total cost.
+
+This means a vehicle profile is a prerequisite for everything else in ChargeGo. Register your vehicle before searching for stations or making a reservation.
+
+<CardGroup cols={2}>
+  <Card title="Find a charging station" icon="map-pin" href="/concepts/stations">
+    Once your vehicle is registered, discover nearby stations that support your connector type.
+  </Card>
+  <Card title="Make a reservation" icon="calendar" href="/concepts/reservations">
+    Book a specific charger for a time window using your vehicle ID.
+  </Card>
+</CardGroup>

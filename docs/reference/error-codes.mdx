@@ -1,0 +1,271 @@
+---
+title: "ChargeGo API error codes and messages"
+description: "A complete reference of HTTP status codes, error response shapes, and troubleshooting steps for every error condition you may encounter in the ChargeGo API."
+---
+
+Every error response from the ChargeGo API follows a consistent JSON structure, regardless of which endpoint triggered it. Understanding that structure and knowing what each status code means will help you diagnose problems and fix them quickly. This page covers every error condition the API can return, with the exact messages you will see and concrete steps to resolve each one.
+
+## Error response format
+
+All error responses share a common envelope:
+
+```json
+{
+  "timestamp": "2026-04-28T10:15:32.123456",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Request validation failed.",
+  "path": "/reservations",
+  "validationErrors": {
+    "vehicleId": "Vehicle id is required.",
+    "startTime": "Reservation start time is required."
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `timestamp` | ISO-8601 datetime | When the error occurred on the server |
+| `status` | integer | HTTP status code |
+| `error` | string | HTTP status phrase (e.g. `"Bad Request"`) |
+| `message` | string | Human-readable summary of what went wrong |
+| `path` | string | The request path that produced the error |
+| `validationErrors` | object | Field-level validation messages; empty object `{}` when not applicable |
+
+The `validationErrors` object is populated only for field validation failures (400 errors caused by constraint violations). For all other error types, it is an empty object.
+
+---
+
+## Error types by status code
+
+<AccordionGroup>
+  <Accordion title="400 Bad Request">
+    A 400 response means your request was syntactically or semantically invalid. ChargeGo uses 400 for two categories of problems: field-level validation failures and business rule violations.
+
+    ### Field validation failures
+
+    These occur when required fields are missing, blank, or carry invalid values. The `validationErrors` object contains one entry per failing field.
+
+    | Field | Constraint | Error message |
+    |---|---|---|
+    | `vehicleId` | Required, must be positive | `"Vehicle id is required."` / `"Vehicle id must be greater than zero."` |
+    | `chargerId` | Required, must be positive | `"Charger id is required."` / `"Charger id must be greater than zero."` |
+    | `startTime` | Required | `"Reservation start time is required."` |
+    | `endTime` | Required, must be after `startTime` | `"Reservation end time is required."` / `"Reservation end time must be after start time."` |
+    | `brand` | Required, not blank | `"Brand cannot be blank."` |
+    | `model` | Required, not blank | `"Model cannot be blank."` |
+    | `batteryCapacity` | Required, must be positive | `"Battery capacity is required."` / `"Battery capacity must be greater than zero."` |
+    | `connectorType` | Required | `"Connector type is required."` |
+    | `plateNumber` | Required, not blank | `"Plate number cannot be blank."` |
+    | `chargerCode` | Required, not blank | `"Charger code cannot be blank."` |
+    | `chargerType` | Required | `"Charger type is required."` |
+    | `powerOutput` | Required | `"Power output is required."` |
+    | `pricePerKwh` | Required, must be positive | `"Price per kWh is required."` / `"Price per kWh must be greater than zero."` |
+    | `stationId` | Required, must be positive | `"Station id is required."` / `"Station id must be greater than zero."` |
+
+    **Example response for a missing field:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Request validation failed.",
+      "path": "/reservations",
+      "validationErrors": {
+        "vehicleId": "Vehicle id is required.",
+        "startTime": "Reservation start time is required."
+      }
+    }
+    ```
+
+    ### Business rule violations
+
+    These occur when all fields are individually valid but a reservation rule is broken. The `validationErrors` object will be empty `{}` for these.
+
+    | Scenario | Error message |
+    |---|---|
+    | `startTime` is in the past | `"Reservation start time cannot be in the past."` |
+    | `startTime` is more than 24 hours from now | `"Reservations can only be created within the next 24 hours."` |
+    | Duration between `startTime` and `endTime` exceeds 2 hours | `"Reservation duration cannot exceed 2 hours."` |
+    | Vehicle's `connectorType` does not match the charger's `connectorType` | `"Vehicle connector type is not compatible with the charger."` |
+    | Charger has no `connectorType` configured | `"Charger connector type is required."` |
+    | Vehicle has no `connectorType` configured | `"Vehicle connector type is required."` |
+    | Charger's `status` field is null | `"Charger status is required."` |
+    | JSON body is malformed or an enum field contains an unrecognized value | `"Malformed JSON request or invalid enum value."` |
+    | A required query parameter is absent | `"Required request parameter '<name>' is missing."` |
+
+    **Example response for a business rule violation:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 400,
+      "error": "Bad Request",
+      "message": "Reservation start time cannot be in the past.",
+      "path": "/reservations",
+      "validationErrors": {}
+    }
+    ```
+
+    ### Troubleshooting 400 errors
+
+    - Check `validationErrors` first. Each key is the exact field name that failed, and the value tells you the rule that was broken.
+    - For time-related errors: ensure `startTime` is in the future, `endTime` is after `startTime`, and the gap between them is no more than 2 hours (e.g. `10:00` to `12:00` is the maximum span). Also ensure `startTime` is within the next 24 hours.
+    - For connector type errors: verify that `connectorType` on your vehicle record matches the `connectorType` on the charger you are trying to book. Both fields accept only `CCS`, `TYPE2`, or `CHADEMO` (case-sensitive).
+    - For enum fields (`connectorType`, `chargerType`, `powerOutput`, `status`): use only documented enum values. Any other string causes a 400 with `"Malformed JSON request or invalid enum value."`.
+    - For ID fields: all ID values must be positive integers (greater than zero). Zero and negative values are rejected.
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    A 401 response means the request reached a protected endpoint without valid credentials, or the credentials provided were incorrect.
+
+    **Example response:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 401,
+      "error": "Unauthorized",
+      "message": "Unauthorized",
+      "path": "/reservations",
+      "validationErrors": {}
+    }
+    ```
+
+    ### Troubleshooting 401 errors
+
+    - Ensure you are including the `Authorization` header in your request.
+    - Verify the credentials or token you are using are correct and have not expired.
+    - If your session token has expired, re-authenticate to obtain a new one before retrying.
+  </Accordion>
+
+  <Accordion title="403 Forbidden">
+    A 403 response means you are authenticated but your account role does not grant access to the requested endpoint or action. For example, endpoints that manage stations, chargers, or other users' data are restricted to admin accounts. Regular user accounts receive a 403 when they attempt to call those endpoints.
+
+    **Example response:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 403,
+      "error": "Forbidden",
+      "message": "Forbidden",
+      "path": "/stations",
+      "validationErrors": {}
+    }
+    ```
+
+    ### Troubleshooting 403 errors
+
+    - Check the documentation for the endpoint you are calling to confirm which roles are permitted.
+    - If you need access to admin-only functionality, contact your ChargeGo account administrator.
+    - Do not confuse 403 with 404 — a 403 means the resource exists but you cannot access it, while a 404 means it was not found (or is being hidden from you intentionally).
+  </Accordion>
+
+  <Accordion title="404 Not Found">
+    A 404 response means the resource you referenced does not exist, or you do not have permission to see it. ChargeGo intentionally returns 404 (rather than 403) when a regular user tries to access a vehicle or reservation that belongs to another user — this prevents account enumeration.
+
+    | Scenario | Error message |
+    |---|---|
+    | Vehicle ID does not exist | `"Vehicle not found."` |
+    | Vehicle belongs to another user | `"Vehicle not found."` |
+    | Station ID does not exist | `"Station not found."` |
+    | Charger ID does not exist | `"Charger not found."` |
+    | Reservation ID does not exist | `"Reservation not found."` |
+    | Reservation belongs to another user | `"Reservation not found."` |
+
+    **Example response:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 404,
+      "error": "Not Found",
+      "message": "Charger not found.",
+      "path": "/reservations",
+      "validationErrors": {}
+    }
+    ```
+
+    ### Troubleshooting 404 errors
+
+    - Double-check that the ID in your request (`vehicleId`, `chargerId`, `stationId`, etc.) belongs to a resource that exists.
+    - If you are looking up your own reservation or vehicle and receive a 404, confirm you are authenticated as the correct user. ChargeGo hides other users' resources behind a 404 rather than a 403.
+    - Use the list endpoints (`GET /vehicles`, `GET /reservations`) to retrieve the valid IDs available to your account.
+  </Accordion>
+
+  <Accordion title="409 Conflict">
+    A 409 response means your request is valid on its own but conflicts with the current state of the system. ChargeGo returns 409 for scheduling conflicts, invalid state transitions, and data integrity violations.
+
+    | Scenario | Error message |
+    |---|---|
+    | Time slot overlaps an existing `ACTIVE` or `IN_PROGRESS` reservation for the same charger | `"There is already a reservation for this charger in the selected time range."` |
+    | Charger is not `AVAILABLE` (it is `OCCUPIED` or `OFFLINE`) | `"Reservations can only be created for available chargers."` |
+    | Trying to cancel an already-cancelled reservation | `"Reservation is already cancelled."` |
+    | Trying to cancel a completed reservation | `"Completed reservations cannot be cancelled."` |
+    | Trying to cancel an expired reservation | `"Expired reservations cannot be cancelled."` |
+    | Trying to cancel or delete a reservation with an active charging session | `"Reservations with an active charging session cannot be cancelled."` / `"Reservations with an active charging session cannot be deleted."` |
+    | Trying to delete a reservation that has charging session history | `"Reservations with charging session history cannot be deleted."` |
+    | Data integrity violation (e.g. duplicate constraint in the database) | `"Request conflicts with existing related data."` |
+
+    **Example response — overlapping reservation:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 409,
+      "error": "Conflict",
+      "message": "There is already a reservation for this charger in the selected time range.",
+      "path": "/reservations",
+      "validationErrors": {}
+    }
+    ```
+
+    ### Troubleshooting 409 errors
+
+    - For overlapping reservation conflicts: search for available time slots using a different start or end time. The blocked charger has an `ACTIVE` or `IN_PROGRESS` reservation covering the time window you requested.
+    - For charger availability conflicts: use the station discovery endpoints to find a charger with `status: "AVAILABLE"` before submitting a booking.
+    - For cancellation conflicts: you can only cancel reservations in `ACTIVE` status that do not have an ongoing charging session. Check the reservation's current `status` field before attempting to cancel.
+    - For deletion conflicts: reservations that have any charging session history (even completed sessions) cannot be deleted. ChargeGo retains this data for billing and audit purposes.
+  </Accordion>
+
+  <Accordion title="500 Internal Server Error">
+    A 500 response indicates an unexpected error occurred on the ChargeGo server. This is not caused by anything in your request.
+
+    **Example response:**
+
+    ```json
+    {
+      "timestamp": "2026-04-28T10:15:32.123456",
+      "status": 500,
+      "error": "Internal Server Error",
+      "message": "Unexpected server error.",
+      "path": "/reservations",
+      "validationErrors": {}
+    }
+    ```
+
+    ### Troubleshooting 500 errors
+
+    - Retry the request after a brief wait. Transient issues often resolve on their own.
+    - If the error persists across multiple retries, contact ChargeGo support with the full error response, including the `timestamp` and `path` fields, so the issue can be investigated on the server side.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Quick reference
+
+| HTTP status | Meaning | Common cause |
+|---|---|---|
+| `400` | Bad Request | Missing/invalid field, business rule violation, bad enum value |
+| `401` | Unauthorized | Missing or incorrect credentials |
+| `403` | Forbidden | Authenticated but insufficient role |
+| `404` | Not Found | Resource does not exist or belongs to another user |
+| `409` | Conflict | Overlapping reservation, unavailable charger, invalid state transition |
+| `500` | Internal Server Error | Unexpected server-side failure |
+
+<Note>
+  The `validationErrors` object is only populated for 400 errors triggered by field-level constraint violations. For business rule violations (also 400) and all other status codes, `validationErrors` is always an empty object `{}`.
+</Note>

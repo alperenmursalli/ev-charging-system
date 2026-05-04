@@ -1,0 +1,58 @@
+---
+title: "ChargeGo: EV Charging Reservation & Management"
+description: "ChargeGo helps EV drivers discover charging stations, book reservations, and track charging sessions with a simple REST API and web interface."
+---
+
+ChargeGo is a full-featured EV charging management platform that lets you register your vehicles, discover nearby charging stations, create time-slot reservations, and track your charging sessions from start to finish — all through a clean REST API and web interface.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Register an account, add your first vehicle, and make your first reservation in minutes.
+  </Card>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Learn how to authenticate with the API using HTTP Basic credentials.
+  </Card>
+  <Card title="Station Discovery" icon="map-location-dot" href="/guides/find-station">
+    Search for available chargers by connector type, power output, price, and location.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore the full REST API — vehicles, stations, chargers, reservations, and sessions.
+  </Card>
+</CardGroup>
+
+## How ChargeGo works
+
+<Steps>
+  <Step title="Create an account">
+    Register at the ChargeGo web UI or via the API. You'll have access to all user features immediately after sign-up.
+  </Step>
+  <Step title="Add your EV">
+    Register your electric vehicle with its brand, model, battery capacity, and connector type (CCS, TYPE2, or CHAdeMO).
+  </Step>
+  <Step title="Find a charging station">
+    Use the station discovery endpoint to filter available stations by connector type, power output, price per kWh, and your GPS coordinates.
+  </Step>
+  <Step title="Book a reservation">
+    Reserve a charger for a specific time window. ChargeGo automatically validates connector compatibility and checks for scheduling conflicts.
+  </Step>
+  <Step title="Start charging">
+    When your reservation time arrives, start the session via the API or UI. ChargeGo tracks energy consumed and calculates the total cost when you end the session.
+  </Step>
+</Steps>
+
+## Key capabilities
+
+<CardGroup cols={2}>
+  <Card title="Vehicles" icon="car" href="/concepts/vehicles">
+    Manage your registered EVs — add, update, or remove vehicles at any time.
+  </Card>
+  <Card title="Stations & Chargers" icon="charging-station" href="/concepts/stations">
+    Browse the full network of charging stations and individual charger units.
+  </Card>
+  <Card title="Reservations" icon="calendar-check" href="/concepts/reservations">
+    Book time slots with conflict detection and connector compatibility validation.
+  </Card>
+  <Card title="Charging Sessions" icon="bolt" href="/concepts/charging-sessions">
+    Track active sessions, view energy consumed, and see your total charging cost.
+  </Card>
+</CardGroup>

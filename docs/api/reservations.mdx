@@ -1,0 +1,294 @@
+---
+title: "Reservations API — book and manage charger time slots"
+description: "Book a charger for a future time window, cancel or delete existing reservations, and retrieve details including session status and energy consumption data."
+---
+
+The Reservations API lets you book a charger unit for a defined time window. When you create a reservation, ChargeGo validates that the time window is in the future, does not exceed two hours, does not conflict with an existing booking on the same charger, and that the vehicle's connector type matches the charger. Once a reservation is active, you can start a charging session against it, cancel it if charging has not yet begun, or delete it when no session history exists.
+
+<Warning>
+  Reservations are subject to the following business rules. Requests that violate any of these will receive a `400 Bad Request` response:
+  - `startTime` must be in the future.
+  - `endTime` must be after `startTime`.
+  - The duration between `startTime` and `endTime` must not exceed **2 hours**.
+  - The vehicle's `connectorType` must match the charger's `connectorType`.
+  - The time window must not overlap with an existing confirmed reservation on the same charger.
+</Warning>
+
+## The reservation object
+
+<ResponseField name="id" type="number">
+  The unique ID assigned to the reservation.
+</ResponseField>
+
+<ResponseField name="vehicleId" type="number">
+  The ID of the vehicle this reservation is for.
+</ResponseField>
+
+<ResponseField name="chargerId" type="number">
+  The ID of the charger that has been booked.
+</ResponseField>
+
+<ResponseField name="startTime" type="string">
+  The reservation start time in ISO 8601 format, e.g., `2026-04-28T10:00:00`.
+</ResponseField>
+
+<ResponseField name="endTime" type="string">
+  The reservation end time in ISO 8601 format, e.g., `2026-04-28T11:30:00`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The current lifecycle status of the reservation. One of: `ACTIVE`, `IN_PROGRESS`, `CANCELLED`, `COMPLETED`, `EXPIRED`.
+</ResponseField>
+
+<ResponseField name="sessionId" type="number">
+  The ID of the associated charging session, if one has been started. `null` before a session begins.
+</ResponseField>
+
+<ResponseField name="sessionStatus" type="string">
+  The status of the associated session (`ACTIVE` or `COMPLETED`). `null` if no session has been started.
+</ResponseField>
+
+<ResponseField name="consumedKwh" type="number">
+  Energy consumed during the session in kWh. Populated after the session ends. `null` while the session is active or has not started.
+</ResponseField>
+
+<ResponseField name="totalCost" type="number">
+  Total cost of the charging session. Populated after the session ends. `null` while the session is active or has not started.
+</ResponseField>
+
+---
+
+## Create a reservation
+
+<br />
+
+`POST /reservations`
+
+Creates a new reservation after validating the time window, connector compatibility, and overlap constraints. Responds with `200 OK` and returns the created reservation object.
+
+### Request body
+
+<ParamField body="vehicleId" type="number" required>
+  The ID of the vehicle to reserve the charger for. Must be greater than zero.
+</ParamField>
+
+<ParamField body="chargerId" type="number" required>
+  The ID of the charger to book. Must be greater than zero.
+</ParamField>
+
+<ParamField body="startTime" type="string" required>
+  The desired start time of the reservation in ISO 8601 datetime format (`YYYY-MM-DDTHH:MM:SS`). Must be in the future.
+</ParamField>
+
+<ParamField body="endTime" type="string" required>
+  The desired end time of the reservation in ISO 8601 datetime format. Must be after `startTime` and within 2 hours of it.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://charge-go.duckdns.org/reservations \
+  -u username:password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vehicleId": 1,
+    "chargerId": 3,
+    "startTime": "2026-05-10T10:00:00",
+    "endTime": "2026-05-10T11:30:00"
+  }'
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+{
+  "id": 7,
+  "vehicleId": 1,
+  "chargerId": 3,
+  "startTime": "2026-05-10T10:00:00",
+  "endTime": "2026-05-10T11:30:00",
+  "status": "ACTIVE",
+  "sessionId": null,
+  "sessionStatus": null,
+  "consumedKwh": null,
+  "totalCost": null
+}
+```
+
+### Error examples
+
+**Incompatible connector type (400)**
+
+The vehicle uses `TYPE2` but the selected charger uses `CCS`.
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Vehicle connector type TYPE2 is not compatible with charger connector type CCS."
+}
+```
+
+**Start time in the past (400)**
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Reservation start time must be in the future."
+}
+```
+
+**Duration exceeds 2 hours (400)**
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Reservation duration cannot exceed 2 hours."
+}
+```
+
+**Overlapping reservation on the same charger (400)**
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "The selected charger already has a reservation that overlaps with the requested time window."
+}
+```
+
+---
+
+## List all reservations
+
+<br />
+
+`GET /reservations`
+
+Returns an array of all reservation records. Responds with `200 OK`.
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/reservations \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK)
+[
+  {
+    "id": 7,
+    "vehicleId": 1,
+    "chargerId": 3,
+    "startTime": "2026-05-10T10:00:00",
+    "endTime": "2026-05-10T11:30:00",
+    "status": "ACTIVE",
+    "sessionId": null,
+    "sessionStatus": null,
+    "consumedKwh": null,
+    "totalCost": null
+  }
+]
+```
+
+---
+
+## Get a reservation by ID
+
+<br />
+
+`GET /reservations/{id}`
+
+Returns a single reservation record including any linked session data. Responds with `200 OK`, or `404 Not Found` if the ID does not exist.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the reservation. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl https://charge-go.duckdns.org/reservations/7 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```json Response (200 OK) — after session ends
+{
+  "id": 7,
+  "vehicleId": 1,
+  "chargerId": 3,
+  "startTime": "2026-05-10T10:00:00",
+  "endTime": "2026-05-10T11:30:00",
+  "status": "COMPLETED",
+  "sessionId": 4,
+  "sessionStatus": "COMPLETED",
+  "consumedKwh": 33.75,
+  "totalCost": 135.0
+}
+```
+
+---
+
+## Cancel a reservation
+
+<br />
+
+`PATCH /reservations/{id}/cancel`
+
+Cancels a reservation, preventing a session from being started against it. This operation is only permitted when the reservation has not yet entered `IN_PROGRESS` status (i.e., no session has been started). Responds with `200 OK` on success.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the reservation to cancel. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X PATCH https://charge-go.duckdns.org/reservations/7/cancel \
+  -u username:password
+```
+
+</CodeGroup>
+
+```
+Response: 200 OK
+```
+
+---
+
+## Delete a reservation
+
+<br />
+
+`DELETE /reservations/{id}`
+
+Permanently removes a reservation record. This is only allowed when no charging session history exists for the reservation. Responds with `204 No Content` on success, or `400 Bad Request` if a session is associated with the reservation.
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The unique ID of the reservation to delete. Must be greater than zero.
+</ParamField>
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://charge-go.duckdns.org/reservations/7 \
+  -u username:password
+```
+
+</CodeGroup>
+
+```
+Response: 204 No Content
+```

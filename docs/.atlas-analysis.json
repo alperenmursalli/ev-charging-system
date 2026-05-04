@@ -1,0 +1,111 @@
+{
+  "projectType": "saas",
+  "projectName": "ChargeGo",
+  "projectDescription": "A web application for discovering EV charging stations, managing reservations, and tracking charging sessions.",
+  "theme": "almond",
+  "primaryColor": "#2ECC71",
+  "lightColor": "#A9DFBF",
+  "darkColor": "#1A8A4A",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/vehicles",
+              "concepts/stations",
+              "concepts/reservations",
+              "concepts/charging-sessions"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/find-station",
+              "guides/make-reservation",
+              "guides/start-session",
+              "guides/admin-management"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/connector-types",
+              "reference/error-codes"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/vehicles",
+              "api/stations",
+              "api/chargers",
+              "api/reservations",
+              "api/sessions"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "User registration and role-based authentication",
+    "EV vehicle management (add, update, delete)",
+    "Charging station discovery with location and connector type filtering",
+    "Reservation creation with conflict detection and connector compatibility checks",
+    "Charging session lifecycle management (start, end, auto-complete)",
+    "Energy consumption and cost calculation per session",
+    "Interactive map UI for station discovery",
+    "Admin operations for station and charger management"
+  ],
+  "publicApiSurface": [
+    "POST /vehicles — create a vehicle",
+    "GET /vehicles — list all vehicles",
+    "GET /vehicles/{id} — get vehicle by ID",
+    "PUT /vehicles/{id} — update vehicle",
+    "DELETE /vehicles/{id} — delete vehicle",
+    "GET /stations — list all stations",
+    "GET /stations/{id} — get station by ID",
+    "GET /stations/{id}/chargers — list chargers for a station",
+    "GET /stations/discovery — discover stations with filters (connectorType, powerOutput, maxPricePerKwh, status, userLatitude, userLongitude)",
+    "POST /stations — create station (admin)",
+    "PUT /stations/{id} — update station (admin)",
+    "DELETE /stations/{id} — delete station (admin)",
+    "GET /chargers — list all chargers",
+    "GET /chargers/{id} — get charger by ID",
+    "POST /chargers — create charger (admin)",
+    "PUT /chargers/{id} — update charger (admin)",
+    "DELETE /chargers/{id} — delete charger (admin)",
+    "POST /reservations — create reservation",
+    "GET /reservations — list all reservations",
+    "GET /reservations/{id} — get reservation by ID",
+    "PATCH /reservations/{id}/cancel — cancel reservation",
+    "DELETE /reservations/{id} — delete reservation",
+    "POST /sessions/start?reservationId=&startBatteryLevel= — start charging session",
+    "POST /sessions/{id}/end?endBatteryLevel= — end charging session",
+    "GET /sessions — list all sessions",
+    "GET /sessions/{id} — get session by ID",
+    "GET /users — list users (admin only)"
+  ]
+}

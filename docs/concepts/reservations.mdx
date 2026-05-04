@@ -1,0 +1,147 @@
+---
+title: "How reservations work in ChargeGo"
+description: "Book a charger for a specific time window, understand the validation rules that protect your slot, and follow the reservation through its full lifecycle."
+---
+
+A reservation claims a specific charger for a specific window of time. Once confirmed, no one else can book that charger for an overlapping period. ChargeGo enforces a set of validation rules at the moment you create a reservation to ensure the booking is legal, the hardware is compatible with your car, and the slot is genuinely open.
+
+## What a reservation contains
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | integer | Unique identifier assigned by ChargeGo. |
+| `vehicleId` | integer | The ID of the vehicle you're charging. |
+| `chargerId` | integer | The ID of the specific charger you're booking. |
+| `startTime` | string (ISO 8601) | When your reserved slot begins, e.g. `2026-04-28T10:00:00`. |
+| `endTime` | string (ISO 8601) | When your reserved slot ends, e.g. `2026-04-28T11:30:00`. |
+| `status` | enum | Current state of the reservation. |
+
+The response also includes `sessionId`, `sessionStatus`, `consumedKwh`, and `totalCost` once a charging session has been created against the reservation.
+
+## Validation rules
+
+ChargeGo checks all of the following before accepting a reservation. If any check fails, you'll receive a `400 Bad Request` or `409 Conflict` error with a message explaining the problem.
+
+<AccordionGroup>
+  <Accordion title="Connector compatibility">
+    Your vehicle's `connectorType` must exactly match the charger's `connectorType`. For example, a vehicle registered as `CCS` cannot be booked against a `TYPE2` charger. Check your vehicle profile and the charger's connector type in the discovery results before submitting.
+  </Accordion>
+  <Accordion title="Charger must be AVAILABLE">
+    The target charger's status must be `AVAILABLE` at the time you create the reservation. You cannot book an `OCCUPIED` or `OFFLINE` charger.
+  </Accordion>
+  <Accordion title="No overlapping reservations">
+    ChargeGo checks whether the charger already has an `ACTIVE` or `IN_PROGRESS` reservation that overlaps with your requested `startTime`/`endTime` window. If there is any overlap, the request is rejected.
+  </Accordion>
+  <Accordion title="Start time must be in the future">
+    `startTime` cannot be in the past. You cannot back-date a reservation.
+  </Accordion>
+  <Accordion title="Maximum duration of 2 hours">
+    The gap between `startTime` and `endTime` cannot exceed 2 hours. If you need a longer session, you will need to create a follow-on reservation.
+  </Accordion>
+  <Accordion title="Maximum advance booking window of 24 hours">
+    You can only create reservations within the next 24 hours. Bookings further in advance are not accepted.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+All times are interpreted in the server's local timezone. Make sure you're submitting ISO 8601 timestamps that reflect the correct wall-clock time for your intended session.
+</Warning>
+
+## Reservation statuses
+
+| Status | Meaning |
+|---|---|
+| `ACTIVE` | The reservation has been confirmed and is awaiting the start time. |
+| `IN_PROGRESS` | A charging session has started against this reservation. |
+| `COMPLETED` | The session has finished. The reservation is closed. |
+| `CANCELLED` | You cancelled the reservation before it started. |
+| `EXPIRED` | The reserved window passed without a charging session being started. |
+
+## Reservation lifecycle
+
+```text
+ACTIVE ──(session starts)──▶ IN_PROGRESS ──(session ends)──▶ COMPLETED
+  │
+  ├──(you cancel)──▶ CANCELLED
+  │
+  └──(window passes with no session)──▶ EXPIRED
+```
+
+<Steps>
+  <Step title="Create a reservation">
+    Send `POST /reservations` with your `vehicleId`, `chargerId`, `startTime`, and `endTime`. A successful response returns a reservation with status `ACTIVE`.
+  </Step>
+  <Step title="Wait for your time window">
+    Your reservation holds the charger. When your `startTime` arrives, ChargeGo's scheduler automatically starts a charging session on your behalf — the reservation transitions to `IN_PROGRESS`.
+  </Step>
+  <Step title="Session runs">
+    Your car charges. You can start the session manually before the scheduled auto-start if you arrive early (see [Charging sessions](/concepts/charging-sessions)).
+  </Step>
+  <Step title="Session ends">
+    When the session completes — either manually or automatically at `endTime` — the reservation moves to `COMPLETED`. The charger becomes `AVAILABLE` again.
+  </Step>
+</Steps>
+
+## Auto-start and auto-expire
+
+ChargeGo runs background schedulers that manage reservations without any action on your part:
+
+- **Auto-start**: every 30 seconds, the system finds `ACTIVE` reservations whose `startTime` has arrived and automatically creates a charging session. The reservation moves to `IN_PROGRESS`.
+- **Auto-expire**: if an `ACTIVE` reservation's `endTime` passes with no session having started, the system marks it `EXPIRED`. The charger is freed.
+- **Auto-delete**: `CANCELLED`, `COMPLETED`, and `EXPIRED` reservations with no attached session history are automatically removed after 24 hours.
+
+<Note>
+Because the system auto-starts sessions, you do not need to manually trigger a session at your reservation time. However, if you arrive early and want to start charging before your scheduled time, you can manually call `POST /sessions/start` from inside the reservation window.
+</Note>
+
+## Cancelling a reservation
+
+Send `PATCH /reservations/{id}/cancel` to cancel a reservation. Cancellation is only allowed when:
+
+- The reservation status is `ACTIVE`.
+- No charging session is currently `ACTIVE` against the reservation.
+
+You cannot cancel a reservation that is already `IN_PROGRESS`, `COMPLETED`, `EXPIRED`, or `CANCELLED`.
+
+```http request
+PATCH /reservations/99/cancel
+```
+
+## Creating a reservation
+
+<CodeGroup>
+
+```json request body
+{
+  "vehicleId": 42,
+  "chargerId": 21,
+  "startTime": "2026-04-28T10:00:00",
+  "endTime": "2026-04-28T11:30:00"
+}
+```
+
+```json response
+{
+  "id": 99,
+  "vehicleId": 42,
+  "chargerId": 21,
+  "startTime": "2026-04-28T10:00:00",
+  "endTime": "2026-04-28T11:30:00",
+  "status": "ACTIVE",
+  "sessionId": null,
+  "sessionStatus": null,
+  "consumedKwh": null,
+  "totalCost": null
+}
+```
+
+</CodeGroup>
+
+<CardGroup cols={2}>
+  <Card title="Vehicles" icon="car" href="/concepts/vehicles">
+    Make sure your vehicle's connector type matches the charger before booking.
+  </Card>
+  <Card title="Charging sessions" icon="bolt" href="/concepts/charging-sessions">
+    Track energy consumed and cost once your session is underway.
+  </Card>
+</CardGroup>

@@ -1,0 +1,144 @@
+---
+title: "Tracking your EV charging sessions"
+description: "See how ChargeGo records every charge event, calculates energy consumed from battery levels, and computes your total cost at the end of a session."
+---
+
+A charging session is the record of energy actually delivered to your car during a reservation window. Where a reservation is a booking, a session is the evidence — it captures when charging started and ended, how much battery percentage was gained, how many kWh were consumed, and what you owe. Every session is linked to exactly one reservation.
+
+## Session fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | integer | Unique identifier. |
+| `reservationId` | integer | The reservation this session belongs to. |
+| `chargerId` | integer | The charger that delivered the energy. |
+| `startBatteryLevel` | number (%) | Battery state of charge when the session began (0–100). |
+| `endBatteryLevel` | number (%) | Battery state of charge when the session ended (0–100). |
+| `chargedPercentage` | number (%) | Difference: `endBatteryLevel − startBatteryLevel`. |
+| `startEnergyKwh` | number | Absolute energy in the battery at session start. |
+| `endEnergyKwh` | number | Absolute energy in the battery at session end. |
+| `consumedKwh` | number | kWh delivered during the session. |
+| `unitPricePerKwh` | number | Price per kWh charged by the charger. |
+| `totalCost` | number | Final cost: `consumedKwh × unitPricePerKwh`. |
+| `startedAt` | string (ISO 8601) | Timestamp when charging began. |
+| `endedAt` | string (ISO 8601) | Timestamp when charging ended. |
+| `reservationStartTime` | string (ISO 8601) | The reservation's original start time. |
+| `reservationEndTime` | string (ISO 8601) | The reservation's original end time. |
+| `status` | enum | `ACTIVE` or `COMPLETED`. |
+
+## How costs are calculated
+
+ChargeGo calculates consumed energy and cost using only two inputs: your battery levels and your vehicle's `batteryCapacity` (stored in your vehicle profile).
+
+```text
+consumedKwh = (endBatteryLevel% − startBatteryLevel%) × batteryCapacity ÷ 100
+totalCost   = consumedKwh × charger.pricePerKwh
+```
+
+**Example:** vehicle battery capacity is 75 kWh, session starts at 20% and ends at 80%, charger price is $0.40/kWh.
+
+```text
+consumedKwh = (80 − 20) × 75 ÷ 100 = 45 kWh
+totalCost   = 45 × 0.40 = $18.00
+```
+
+Both values are rounded to two decimal places.
+
+<Note>
+The absolute energy fields `startEnergyKwh` and `endEnergyKwh` are derived from `batteryCapacity × batteryLevel% ÷ 100` and are provided for convenience. The billing calculation uses `consumedKwh`, which is computed from the difference in battery percentages.
+</Note>
+
+## Session statuses
+
+| Status | Meaning |
+|---|---|
+| `ACTIVE` | The session is in progress. Charging is happening now. |
+| `COMPLETED` | The session has ended. `consumedKwh` and `totalCost` are final. |
+
+## Starting a session manually
+
+You can start a session yourself as soon as you are within the reservation window (i.e., between `startTime` and `endTime`). Attempting to start before `startTime` or after `endTime` will return a `409 Conflict`.
+
+```http request
+POST /sessions/start?reservationId=99&startBatteryLevel=20
+```
+
+`startBatteryLevel` is a percentage from 0 to 100. If you omit it, ChargeGo uses the `endBatteryLevel` from your most recent previous session for the same vehicle. If no previous session exists, it defaults to 20%.
+
+<Tip>
+Always provide an explicit `startBatteryLevel` if you want an accurate cost calculation. The default fallback value is a best-effort estimate and may not reflect your car's actual state of charge.
+</Tip>
+
+## Ending a session manually
+
+When you unplug, send `POST /sessions/{id}/end` with your current battery level:
+
+```http request
+POST /sessions/42/end?endBatteryLevel=80
+```
+
+`endBatteryLevel` must be between 0 and 100, and must not be lower than `startBatteryLevel`. On success, the session moves to `COMPLETED`, `consumedKwh` and `totalCost` are calculated, and the charger status returns to `AVAILABLE`.
+
+## Manual session flow
+
+<Steps>
+  <Step title="Arrive at the charger">
+    Navigate to the station and find the charger matching your reservation's `chargerId`. Your reservation must be within its active time window.
+  </Step>
+  <Step title="Start the session">
+    Call `POST /sessions/start?reservationId={id}&startBatteryLevel={level}` with your current battery percentage. The session status becomes `ACTIVE` and the charger status changes to `OCCUPIED`.
+  </Step>
+  <Step title="Plug in and charge">
+    Connect your car. The session records `startedAt` at the moment you called the start endpoint.
+  </Step>
+  <Step title="End the session">
+    When you're done, call `POST /sessions/{id}/end?endBatteryLevel={level}` with your final battery percentage. ChargeGo computes `consumedKwh` and `totalCost` and returns the completed session record.
+  </Step>
+</Steps>
+
+## Auto-start and auto-complete
+
+You don't have to interact with the session endpoints manually. ChargeGo's scheduler handles sessions automatically:
+
+- **Auto-start**: every 30 seconds the system checks for `ACTIVE` reservations whose `startTime` has arrived. If no session exists yet, one is created automatically using either the end battery level from the vehicle's last session or the configured default of 20%.
+- **Auto-complete**: every 60 seconds the system checks for `ACTIVE` sessions whose reservation's `endTime` has passed. Those sessions are completed automatically. The system estimates `endBatteryLevel` based on actual charging duration and the charger's rated `powerOutput`, capped at 100%.
+
+<Warning>
+Auto-completed sessions estimate `endBatteryLevel` from time elapsed and charger power. For accurate billing records, end your session manually before `endTime` whenever possible.
+</Warning>
+
+## Example session response
+
+```json completed session
+{
+  "id": 42,
+  "reservationId": 99,
+  "chargerId": 21,
+  "startBatteryLevel": 20.0,
+  "endBatteryLevel": 80.0,
+  "chargedPercentage": 60.0,
+  "startEnergyKwh": 15.0,
+  "endEnergyKwh": 60.0,
+  "consumedKwh": 45.0,
+  "unitPricePerKwh": 0.38,
+  "totalCost": 17.10,
+  "startedAt": "2026-04-28T10:02:14",
+  "endedAt": "2026-04-28T11:28:45",
+  "reservationStartTime": "2026-04-28T10:00:00",
+  "reservationEndTime": "2026-04-28T11:30:00",
+  "status": "COMPLETED"
+}
+```
+
+## Viewing your session history
+
+Use `GET /sessions` to list all charging sessions for your account. Use `GET /sessions/{id}` to retrieve a single session record. Sessions are scoped to your account — you will only see sessions linked to your own vehicles.
+
+<CardGroup cols={2}>
+  <Card title="Reservations" icon="calendar" href="/concepts/reservations">
+    Every session is tied to a reservation. Understand the reservation lifecycle first.
+  </Card>
+  <Card title="Vehicles" icon="car" href="/concepts/vehicles">
+    Battery capacity on your vehicle profile directly affects your session cost calculation.
+  </Card>
+</CardGroup>

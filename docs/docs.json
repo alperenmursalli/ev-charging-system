@@ -1,0 +1,79 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "ChargeGo",
+  "theme": "almond",
+  "colors": {
+    "primary": "#2ECC71",
+    "light": "#A9DFBF",
+    "dark": "#1A8A4A"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/alperenmursalli/ev-charging-system"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/vehicles",
+              "concepts/stations",
+              "concepts/reservations",
+              "concepts/charging-sessions"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/find-station",
+              "guides/make-reservation",
+              "guides/start-session",
+              "guides/admin-management"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/connector-types",
+              "reference/error-codes"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/vehicles",
+              "api/stations",
+              "api/chargers",
+              "api/reservations",
+              "api/sessions"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

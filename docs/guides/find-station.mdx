@@ -1,0 +1,137 @@
+---
+title: "Find and filter EV charging stations"
+description: "Search ChargeGo's network of charging stations by connector type, power output, price, and location to find the right charger for your vehicle."
+---
+
+The station discovery endpoint gives you a real-time view of ChargeGo's charging network. You can call it with no filters to see every station, or narrow results by connector type, power level, price cap, and operational status. When you include your GPS coordinates, the results are sorted by distance from your current position so the nearest stations appear first.
+
+## Base URL
+
+All API requests use Basic Auth with your ChargeGo username and password:
+
+```
+https://charge-go.duckdns.org
+```
+
+## Discover stations
+
+```
+GET /stations/discovery
+```
+
+All query parameters are optional. If you omit every parameter, the endpoint returns all stations in the network.
+
+| Parameter | Type | Accepted values | Description |
+|---|---|---|---|
+| `connectorType` | string | `CCS`, `TYPE2`, `CHADEMO` | Filter to stations that have at least one charger with this connector type |
+| `powerOutput` | string | `KW_22`, `KW_50`, `KW_150` | Filter to stations with at least one charger at this power level |
+| `maxPricePerKwh` | float | Any positive number | Exclude stations whose cheapest charger exceeds this price |
+| `status` | string | `AVAILABLE`, `OFFLINE` | Filter by station operational status |
+| `userLatitude` | double | Decimal degrees | Your latitude — required for distance sorting |
+| `userLongitude` | double | Decimal degrees | Your longitude — required for distance sorting |
+
+<Note>
+  Distance sorting only activates when you provide **both** `userLatitude` and `userLongitude`. Providing only one coordinate has no effect on ordering.
+</Note>
+
+## Example requests
+
+<CodeGroup>
+
+```bash All stations (no filters)
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/discovery"
+```
+
+```bash By connector type
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/discovery?connectorType=CCS"
+```
+
+```bash Sorted by distance from your location
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/discovery?userLatitude=38.4237&userLongitude=27.1428"
+```
+
+```bash Combined filters with location
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/discovery?connectorType=CCS&powerOutput=KW_150&maxPricePerKwh=6.0&status=AVAILABLE&userLatitude=38.4237&userLongitude=27.1428"
+```
+
+</CodeGroup>
+
+## Response structure
+
+Each item in the response array describes one station along with a summary of its chargers.
+
+```json Example response
+[
+  {
+    "id": 1,
+    "name": "Karşıyaka Hub",
+    "address": "Karşıyaka, İzmir",
+    "latitude": 38.4589,
+    "longitude": 27.1143,
+    "status": "AVAILABLE",
+    "totalChargerCount": 7,
+    "availableChargerCount": 5,
+    "minPricePerKwh": 3.0,
+    "connectorTypes": ["CCS", "TYPE2", "CHADEMO"],
+    "powerOutputs": ["KW_150", "KW_50", "KW_22"],
+    "distanceKm": 4.12,
+    "chargers": [
+      {
+        "id": 1,
+        "chargerCode": "DC-50-03",
+        "chargerType": "DC",
+        "powerOutput": "KW_150",
+        "connectorType": "CCS",
+        "pricePerKwh": 5.5,
+        "status": "AVAILABLE"
+      },
+      {
+        "id": 4,
+        "chargerCode": "AC-52-01",
+        "chargerType": "AC",
+        "powerOutput": "KW_22",
+        "connectorType": "TYPE2",
+        "pricePerKwh": 3.0,
+        "status": "AVAILABLE"
+      }
+    ]
+  }
+]
+```
+
+### Station status values
+
+| Status | Meaning |
+|---|---|
+| `AVAILABLE` | At least one charger is available for use |
+| `OCCUPIED` | All chargers are in use but none are offline |
+| `OFFLINE` | The station or all its chargers are offline |
+
+### Charger status values
+
+| Status | Meaning |
+|---|---|
+| `AVAILABLE` | Ready to accept a new session |
+| `OCCUPIED` | Currently in use by another vehicle |
+| `OFFLINE` | Out of service |
+
+## List all chargers at a specific station
+
+If you already know the station ID, you can retrieve its chargers directly:
+
+```bash
+curl -u username:password \
+  "https://charge-go.duckdns.org/stations/1/chargers"
+```
+
+## Using the map UI
+
+ChargeGo also provides an interactive map at `https://charge-go.duckdns.org` where you can browse and filter stations visually without making API calls. The map reflects the same real-time availability data as the discovery endpoint.
+
+<Tip>
+  Note the `chargerCode` and `id` of any charger you want to reserve — you will need the charger's `id` when creating a reservation.
+</Tip>

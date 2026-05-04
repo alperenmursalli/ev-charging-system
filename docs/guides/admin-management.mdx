@@ -1,0 +1,245 @@
+---
+title: "Manage stations and chargers as an admin"
+description: "Create, update, and remove charging stations and chargers across the ChargeGo network, and view all registered users using admin-only endpoints."
+---
+
+Admin users in ChargeGo have access to endpoints for building and maintaining the charging network. As an admin, you can create and configure stations and chargers, update their details, remove them when they go out of service, and list all accounts registered in the system. This guide covers each of those operations with full request and response examples.
+
+<Warning>
+  These endpoints require a ChargeGo account with **ROLE_ADMIN**. Requests from non-admin accounts will be rejected. Deleting a station or charger is **permanent and cannot be undone** — all associated data is removed immediately.
+</Warning>
+
+## Base URL
+
+```
+https://charge-go.duckdns.org
+```
+
+All requests use Basic Auth with your admin username and password. You can also explore every endpoint interactively through the Swagger UI at `https://charge-go.duckdns.org/swagger-ui.html`.
+
+---
+
+## Stations
+
+### Create a station
+
+```bash
+curl -u admin:password \
+  -X POST "https://charge-go.duckdns.org/stations" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Alsancak Meydan",
+    "address": "Konak, İzmir",
+    "latitude": 38.4382,
+    "longitude": 27.1421,
+    "status": "AVAILABLE"
+  }'
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes | Display name for the station |
+| `address` | string | Yes | Street address shown to users |
+| `latitude` | double | Yes | Decimal latitude for map placement and distance sorting |
+| `longitude` | double | Yes | Decimal longitude for map placement and distance sorting |
+| `status` | string | Yes | Initial status — `AVAILABLE` or `OFFLINE` |
+
+**Response (201)**
+
+```json
+{
+  "id": 4,
+  "name": "Alsancak Meydan",
+  "address": "Konak, İzmir",
+  "latitude": 38.4382,
+  "longitude": 27.1421,
+  "status": "AVAILABLE"
+}
+```
+
+### Update a station
+
+Use `PUT /stations/{id}` to change any field on an existing station. All fields you include in the body will be updated.
+
+```bash
+curl -u admin:password \
+  -X PUT "https://charge-go.duckdns.org/stations/4" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Alsancak Meydan",
+    "address": "Konak, İzmir",
+    "latitude": 38.4382,
+    "longitude": 27.1421,
+    "status": "OFFLINE"
+  }'
+```
+
+### List all stations
+
+```bash
+curl -u admin:password \
+  "https://charge-go.duckdns.org/stations"
+```
+
+### Delete a station
+
+```bash
+curl -u admin:password \
+  -X DELETE "https://charge-go.duckdns.org/stations/4"
+```
+
+A successful deletion returns HTTP `204 No Content` with no response body.
+
+<Warning>
+  Deleting a station removes it and all its associated charger records permanently. There is no soft delete or recovery option.
+</Warning>
+
+---
+
+## Chargers
+
+### Create a charger
+
+Each charger must be linked to an existing station via `stationId`.
+
+```bash
+curl -u admin:password \
+  -X POST "https://charge-go.duckdns.org/chargers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chargerCode": "DC-150-A1",
+    "chargerType": "DC",
+    "powerOutput": "KW_150",
+    "connectorType": "CCS",
+    "pricePerKwh": 5.5,
+    "status": "AVAILABLE",
+    "stationId": 4
+  }'
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `chargerCode` | string | Yes | Unique identifier code displayed on the physical unit (e.g. `DC-150-A1`) |
+| `chargerType` | string | Yes | `AC` or `DC` |
+| `powerOutput` | string | Yes | `KW_22`, `KW_50`, or `KW_150` |
+| `connectorType` | string | Yes | `CCS`, `TYPE2`, or `CHADEMO` — must match the vehicles that will use it |
+| `pricePerKwh` | float | Yes | Charging price per kWh — used in session cost calculations |
+| `status` | string | Yes | `AVAILABLE` or `OFFLINE` |
+| `stationId` | long | Yes | The ID of the station this charger belongs to |
+
+**Response (201)**
+
+```json
+{
+  "id": 21,
+  "chargerCode": "DC-150-A1",
+  "chargerType": "DC",
+  "powerOutput": "KW_150",
+  "connectorType": "CCS",
+  "pricePerKwh": 5.5,
+  "status": "AVAILABLE",
+  "stationId": 4
+}
+```
+
+### Update a charger
+
+Use `PUT /chargers/{id}` to update any field on a charger — for example, to change its price or take it offline for maintenance.
+
+```bash
+curl -u admin:password \
+  -X PUT "https://charge-go.duckdns.org/chargers/21" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chargerCode": "DC-150-A1",
+    "chargerType": "DC",
+    "powerOutput": "KW_150",
+    "connectorType": "CCS",
+    "pricePerKwh": 5.0,
+    "status": "OFFLINE",
+    "stationId": 4
+  }'
+```
+
+### List all chargers
+
+```bash
+curl -u admin:password \
+  "https://charge-go.duckdns.org/chargers"
+```
+
+To list only the chargers at a specific station:
+
+```bash
+curl -u admin:password \
+  "https://charge-go.duckdns.org/stations/4/chargers"
+```
+
+### Delete a charger
+
+```bash
+curl -u admin:password \
+  -X DELETE "https://charge-go.duckdns.org/chargers/21"
+```
+
+Returns HTTP `204 No Content` on success.
+
+<Warning>
+  Deleting a charger is permanent. Before removing a charger, ensure no active reservations or sessions reference it, as this may leave records in an inconsistent state.
+</Warning>
+
+---
+
+## Users
+
+### List all users
+
+Admins can retrieve a list of all registered accounts in the system.
+
+```bash
+curl -u admin:password \
+  "https://charge-go.duckdns.org/users"
+```
+
+**Response**
+
+```json
+[
+  {
+    "id": 1,
+    "username": "alice",
+    "role": "ROLE_USER"
+  },
+  {
+    "id": 2,
+    "username": "admin",
+    "role": "ROLE_ADMIN"
+  }
+]
+```
+
+This endpoint is restricted to `ROLE_ADMIN` accounts only. Non-admin requests return `403 Forbidden`.
+
+---
+
+## Reference values
+
+### Power output levels
+
+| Value | Power |
+|---|---|
+| `KW_22` | 22 kW (AC slow charging) |
+| `KW_50` | 50 kW (DC fast charging) |
+| `KW_150` | 150 kW (DC rapid charging) |
+
+### Connector types
+
+| Value | Common vehicles |
+|---|---|
+| `CCS` | Tesla (non-proprietary), BMW, Hyundai, Kia, Audi, Porsche, Volvo |
+| `TYPE2` | Renault Zoe, BMW i3, Mini Cooper SE (AC charging) |
+| `CHADEMO` | Nissan Leaf, some older Mitsubishi models |
+
+<Tip>
+  The Swagger UI at `https://charge-go.duckdns.org/swagger-ui.html` provides an interactive interface for all endpoints, including schema validation and try-it-out functionality. It is especially useful when exploring edge cases or testing new station configurations.
+</Tip>

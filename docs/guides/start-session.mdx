@@ -1,0 +1,180 @@
+---
+title: "Start and end a charging session"
+description: "Plug in and begin charging against an active reservation, then end the session to receive a full cost and energy summary for your vehicle."
+---
+
+A charging session is the active period during which electricity flows to your vehicle. Sessions are always tied to a reservation — the reservation defines which charger you use and the time window, while the session records the actual battery levels, energy consumed, and cost. This guide walks through starting a session, ending it manually, and understanding what happens when the session auto-completes.
+
+## Base URL
+
+```
+https://charge-go.duckdns.org
+```
+
+All requests require Basic Auth with your ChargeGo username and password.
+
+---
+
+<Steps>
+
+<Step title="Confirm your reservation is active">
+
+You need an existing reservation with `ACTIVE` or `IN_PROGRESS` status before starting a session. If you have not made one yet, see [Book a charger reservation in ChargeGo](/guides/make-reservation).
+
+You can check the status of an existing reservation:
+
+```bash
+curl -u username:password \
+  "https://charge-go.duckdns.org/reservations/42"
+```
+
+The session can only be started within the reservation's time window — not before `startTime` and not after `endTime`.
+
+</Step>
+
+<Step title="Start the charging session">
+
+Once you have plugged in your vehicle, start the session by sending a `POST` request with your reservation ID. You may optionally report your current battery level as a percentage.
+
+```bash With battery level
+curl -u username:password \
+  -X POST "https://charge-go.duckdns.org/sessions/start?reservationId=42&startBatteryLevel=25"
+```
+
+```bash Without battery level
+curl -u username:password \
+  -X POST "https://charge-go.duckdns.org/sessions/start?reservationId=42"
+```
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `reservationId` | long | Yes | The ID of your active reservation |
+| `startBatteryLevel` | float | No | Your battery percentage at plug-in, from `0` to `100` |
+
+<Note>
+  `startBatteryLevel` is optional. If you omit it, ChargeGo uses the end battery level from your most recent previous session for the same vehicle. If no previous session exists, the system defaults to a configured initial level (typically 20%). You can always provide it explicitly for more accurate cost calculations.
+</Note>
+
+**Successful response**
+
+```json
+{
+  "id": 101,
+  "reservationId": 42,
+  "chargerId": 3,
+  "startBatteryLevel": 25.0,
+  "endBatteryLevel": null,
+  "chargedPercentage": null,
+  "consumedKwh": null,
+  "startEnergyKwh": 18.75,
+  "endEnergyKwh": null,
+  "unitPricePerKwh": 4.0,
+  "totalCost": null,
+  "startedAt": "2026-05-05T10:03:22",
+  "endedAt": null,
+  "reservationStartTime": "2026-05-05T10:00:00",
+  "reservationEndTime": "2026-05-05T11:00:00",
+  "status": "ACTIVE"
+}
+```
+
+Note the session `id` — you will need it to end the session.
+
+</Step>
+
+<Step title="Charge your vehicle">
+
+Your vehicle is now charging. The charger status changes to `OCCUPIED` and the reservation moves to `IN_PROGRESS`. ChargeGo records the session start time and your reported battery level.
+
+You can check on the session at any time:
+
+```bash
+curl -u username:password \
+  "https://charge-go.duckdns.org/sessions/101"
+```
+
+</Step>
+
+<Step title="End the charging session">
+
+When you are ready to unplug, end the session by providing your current battery percentage. This triggers the final cost calculation.
+
+```bash
+curl -u username:password \
+  -X POST "https://charge-go.duckdns.org/sessions/101/end?endBatteryLevel=80"
+```
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `endBatteryLevel` | float | Yes | Your battery percentage when unplugging, from `0` to `100` — must be greater than or equal to `startBatteryLevel` |
+
+**Successful response**
+
+```json
+{
+  "id": 101,
+  "reservationId": 42,
+  "chargerId": 3,
+  "startBatteryLevel": 25.0,
+  "endBatteryLevel": 80.0,
+  "chargedPercentage": 55.0,
+  "consumedKwh": 41.25,
+  "startEnergyKwh": 18.75,
+  "endEnergyKwh": 60.0,
+  "unitPricePerKwh": 4.0,
+  "totalCost": 165.0,
+  "startedAt": "2026-05-05T10:03:22",
+  "endedAt": "2026-05-05T10:58:47",
+  "reservationStartTime": "2026-05-05T10:00:00",
+  "reservationEndTime": "2026-05-05T11:00:00",
+  "status": "COMPLETED"
+}
+```
+
+Once ended, the charger status returns to `AVAILABLE` and the reservation moves to `COMPLETED`.
+
+</Step>
+
+<Step title="View your session summary">
+
+You can retrieve the full session summary at any time — useful for expense tracking or reviewing your energy usage:
+
+```bash
+curl -u username:password \
+  "https://charge-go.duckdns.org/sessions/101"
+```
+
+To see all your sessions:
+
+```bash
+curl -u username:password \
+  "https://charge-go.duckdns.org/sessions"
+```
+
+</Step>
+
+</Steps>
+
+## Session response fields explained
+
+| Field | Description |
+|---|---|
+| `startBatteryLevel` | Battery percentage at the start of the session (0–100) |
+| `endBatteryLevel` | Battery percentage when the session ended (0–100) |
+| `chargedPercentage` | Difference between end and start battery levels |
+| `startEnergyKwh` | Absolute energy in the battery at session start, derived from battery capacity × start level |
+| `endEnergyKwh` | Absolute energy in the battery at session end, derived from battery capacity × end level |
+| `consumedKwh` | Total kWh delivered during the session |
+| `unitPricePerKwh` | The charger's price per kWh at the time of the session |
+| `totalCost` | `consumedKwh` × `unitPricePerKwh`, rounded to two decimal places |
+| `status` | `ACTIVE` while charging, `COMPLETED` when done |
+
+## Auto-complete behavior
+
+If your reservation's `endTime` passes while a session is still active — for example, if you forgot to manually end it — ChargeGo's scheduler automatically completes the session. The scheduler runs approximately every 60 seconds after the reservation end time, so your session will be closed within about a minute of the window expiring.
+
+When auto-completing, ChargeGo estimates the consumed energy based on the charger's power output and the duration of the session, capped by the vehicle's available battery capacity. The charger status is returned to `AVAILABLE` automatically.
+
+<Warning>
+  You cannot end a session that has already been auto-completed. If the scheduler ran before you submitted your `endBatteryLevel`, the session will be in `COMPLETED` status and the estimated values will apply.
+</Warning>
