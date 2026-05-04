@@ -1,30 +1,53 @@
-script: |
-  set -e
-  cd ~/ev-charging-system
+name: Deploy to Oracle VPS
 
-  git fetch origin main
-  git reset --hard origin/main
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-  docker rm -f evsystem || true
-  docker-compose down --remove-orphans || true
-  docker-compose up -d --build --force-recreate
+concurrency:
+  group: deploy-to-oracle-vps
+  cancel-in-progress: true
 
-  docker-compose ps
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-  healthy=false
-  for i in {1..30}; do
-    if curl -f http://localhost:8081/actuator/health; then
-      healthy=true
-      break
-    fi
-    echo "Waiting for app to become healthy... attempt $i"
-    sleep 5
-  done
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/ev-charging-system
 
-  if [ "$healthy" != "true" ]; then
-    echo "Application did not become healthy in time"
-    docker-compose logs --tail=100
-    exit 1
-  fi
+            git fetch origin main
+            git reset --hard origin/main
 
-  docker image prune -f
+            docker rm -f evsystem || true
+            docker-compose down --remove-orphans || true
+            docker-compose up -d --build --force-recreate
+
+            docker-compose ps
+
+            healthy=false
+            for i in {1..30}; do
+              if curl -f http://localhost:8081/actuator/health; then
+                healthy=true
+                break
+              fi
+              echo "Waiting for app to become healthy... attempt $i"
+              sleep 5
+            done
+
+            if [ "$healthy" != "true" ]; then
+              echo "Application did not become healthy in time"
+              docker-compose logs --tail=100
+              exit 1
+            fi
+
+            docker image prune -f
