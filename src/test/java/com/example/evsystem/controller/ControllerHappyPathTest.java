@@ -26,7 +26,9 @@ import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -157,6 +159,14 @@ class ControllerHappyPathTest {
                 .andExpect(jsonPath("$.vehicleId").value(1))
                 .andExpect(jsonPath("$.chargerId").value(2))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void docsRedirectsToMintlifyDocumentation() throws Exception {
+        buildMockMvc(new RootController())
+                .perform(get("/docs"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("https://chargego.mintlify.app"));
     }
 
     private MockMvc buildMockMvc(Object controller) {
