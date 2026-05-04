@@ -1,33 +1,30 @@
-name: Deploy to Oracle VPS
+script: |
+  set -e
+  cd ~/ev-charging-system
 
-on:
-  push:
-    branches:
-      - main
+  git fetch origin main
+  git reset --hard origin/main
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  docker rm -f evsystem || true
+  docker-compose down --remove-orphans || true
+  docker-compose up -d --build --force-recreate
 
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -e
-            cd ~/ev-charging-system
+  docker-compose ps
 
-            git fetch origin main
-            git reset --hard origin/main
+  healthy=false
+  for i in {1..30}; do
+    if curl -f http://localhost:8081/actuator/health; then
+      healthy=true
+      break
+    fi
+    echo "Waiting for app to become healthy... attempt $i"
+    sleep 5
+  done
 
-            docker-compose down --remove-orphans
-            docker-compose up -d --build --force-recreate
+  if [ "$healthy" != "true" ]; then
+    echo "Application did not become healthy in time"
+    docker-compose logs --tail=100
+    exit 1
+  fi
 
-            sleep 25
-            docker-compose ps
-            curl -f http://localhost:8081/actuator/health
-
-            docker image prune -f
+  docker image prune -f
