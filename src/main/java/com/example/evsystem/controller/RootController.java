@@ -18,7 +18,7 @@ public class RootController {
         return "redirect:/ui/home";
     }
 
-    @GetMapping("/docs")
+    @GetMapping({"/docs", "/docs/"})
     public String redirectToDocs() {
         return "redirect:" + docsUrl;
     }

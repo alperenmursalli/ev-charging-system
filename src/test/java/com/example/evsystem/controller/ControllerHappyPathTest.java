@@ -169,6 +169,14 @@ class ControllerHappyPathTest {
                 .andExpect(redirectedUrl("https://egeuniversity.mintlify.app/"));
     }
 
+    @Test
+    void docsWithTrailingSlashRedirectsToMintlifyDocumentation() throws Exception {
+        buildMockMvc(new RootController("https://egeuniversity.mintlify.app/"))
+                .perform(get("/docs/"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("https://egeuniversity.mintlify.app/"));
+    }
+
     private MockMvc buildMockMvc(Object controller) {
         return MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
