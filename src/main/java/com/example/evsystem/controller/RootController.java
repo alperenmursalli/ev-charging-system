@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class RootController {
 
-    private static final String MINTLIFY_DOCS_URL = "https://chargego.mintlify.app";
+    private static final String MINTLIFY_DOCS_URL = "https://egeuniversity.mintlify.app/";
 
     @GetMapping("/")
     public String redirectToHome() {
