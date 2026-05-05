@@ -121,11 +121,13 @@ public class WebController {
     @GetMapping("/reservations/create")
     public String createReservationForm(@RequestParam(required = false) Long chargerId,
                                         @RequestParam(required = false) Long vehicleId,
+                                        @RequestParam(required = false) Integer travelDurationMinutes,
                                         Model model) {
         model.addAttribute("vehicles", vehicleService.getAllVehicles());
         model.addAttribute("chargers", chargerService.getAll());
         model.addAttribute("selectedChargerId", chargerId);
         model.addAttribute("selectedVehicleId", vehicleId);
+        model.addAttribute("selectedTravelDurationMinutes", travelDurationMinutes);
         model.addAttribute("now", LocalDateTime.now().withSecond(0).withNano(0));
         return "reservations/create";
     }
@@ -135,6 +137,7 @@ public class WebController {
                                     @RequestParam Long chargerId,
                                     @RequestParam String startTime,
                                     @RequestParam String endTime,
+                                    @RequestParam(required = false) Integer travelDurationMinutes,
                                     Model model,
                                     RedirectAttributes redirectAttrs) {
         try {
@@ -143,6 +146,7 @@ public class WebController {
             request.setChargerId(chargerId);
             request.setStartTime(LocalDateTime.parse(startTime));
             request.setEndTime(LocalDateTime.parse(endTime));
+            request.setTravelDurationMinutes(travelDurationMinutes);
             ReservationResponse response = reservationService.createResponse(request);
             redirectAttrs.addFlashAttribute("reservation", response);
             redirectAttrs.addFlashAttribute("compatible", true);
@@ -155,6 +159,7 @@ public class WebController {
             model.addAttribute("chargers", chargerService.getAll());
             model.addAttribute("selectedVehicleId", vehicleId);
             model.addAttribute("selectedChargerId", chargerId);
+            model.addAttribute("selectedTravelDurationMinutes", travelDurationMinutes);
             model.addAttribute("now", LocalDateTime.now().withSecond(0).withNano(0));
             return "reservations/create";
         }
@@ -239,5 +244,16 @@ public class WebController {
             }
         }
         return "sessions/result";
+    }
+
+    @GetMapping("/sessions/{id}/payment")
+    public String sessionPayment(@PathVariable Long id, Model model) {
+        try {
+            model.addAttribute("chargingSession", ChargingSessionResponse.from(chargingSessionService.getSessionById(id)));
+            return "sessions/payment";
+        } catch (BusinessException e) {
+            model.addAttribute("errorMsg", e.getMessage());
+            return "error";
+        }
     }
 }
