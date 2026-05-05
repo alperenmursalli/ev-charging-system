@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
@@ -40,6 +41,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @EntityGraph(attributePaths = {"vehicle", "charger"})
     List<Reservation> findByStatusInAndEndTimeBefore(
+            Collection<ReservationStatus> statuses,
+            LocalDateTime endTime
+    );
+
+    Optional<Reservation> findFirstByChargerIdAndStatusInAndEndTimeAfterOrderByEndTimeAsc(
+            Long chargerId,
             Collection<ReservationStatus> statuses,
             LocalDateTime endTime
     );

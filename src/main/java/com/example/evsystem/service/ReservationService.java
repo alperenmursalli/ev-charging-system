@@ -65,7 +65,7 @@ public class ReservationService {
         validateVehicleOwnership(vehicle);
         validateTimes(request.getStartTime(), request.getEndTime());
         validateConnectorCompatibility(vehicle, charger);
-        validateChargerAvailability(charger);
+        validateChargerAvailability(charger, request.getStartTime(), request.getTravelDurationMinutes());
         validateNoOverlap(request.getChargerId(), request.getStartTime(), request.getEndTime());
 
         Reservation reservation = new Reservation();
@@ -242,13 +242,43 @@ public class ReservationService {
         }
     }
 
-    private void validateChargerAvailability(Charger charger) {
+    private void validateChargerAvailability(Charger charger, LocalDateTime startTime, Integer travelDurationMinutes) {
         if (charger.getStatus() == null) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Charger status is required.");
         }
 
-        if (charger.getStatus() != ChargerStatus.AVAILABLE) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Reservations can only be created for available chargers.");
+        if (charger.getStatus() == ChargerStatus.OFFLINE) {
+            throw new BusinessException(HttpStatus.CONFLICT, "Offline chargers cannot be reserved.");
+        }
+
+        if (travelDurationMinutes != null) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime earliestByTravel = now.plusMinutes(travelDurationMinutes);
+            if (startTime.isBefore(earliestByTravel)) {
+                throw new BusinessException(
+                        HttpStatus.BAD_REQUEST,
+                        "Reservation start time must be after your estimated arrival time."
+                );
+            }
+        }
+
+        if (charger.getStatus() == ChargerStatus.OCCUPIED) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime availableAt = reservationRepository
+                    .findFirstByChargerIdAndStatusInAndEndTimeAfterOrderByEndTimeAsc(
+                            charger.getId(),
+                            List.of(ReservationStatus.ACTIVE, ReservationStatus.IN_PROGRESS),
+                            now
+                    )
+                    .map(Reservation::getEndTime)
+                    .orElse(now);
+
+            if (startTime.isBefore(availableAt)) {
+                throw new BusinessException(
+                        HttpStatus.CONFLICT,
+                        "This charger is occupied. Choose a start time after it becomes available."
+                );
+            }
         }
     }
 

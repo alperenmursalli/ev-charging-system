@@ -2,6 +2,7 @@ package com.example.evsystem.dto;
 
 import com.example.evsystem.validation.ValidReservationTime;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -27,6 +28,10 @@ public class CreateReservationRequest {
     @NotNull(message = "Reservation end time is required.")
     @Schema(example = "2026-04-28T11:30:00")
     private LocalDateTime endTime;
+
+    @Min(value = 0, message = "Travel duration minutes cannot be negative.")
+    @Schema(example = "15")
+    private Integer travelDurationMinutes;
 
     public Long getVehicleId() {
         return vehicleId;
@@ -58,5 +63,13 @@ public class CreateReservationRequest {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public Integer getTravelDurationMinutes() {
+        return travelDurationMinutes;
+    }
+
+    public void setTravelDurationMinutes(Integer travelDurationMinutes) {
+        this.travelDurationMinutes = travelDurationMinutes;
     }
 }

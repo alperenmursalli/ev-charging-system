@@ -301,8 +301,8 @@
               <span class="badge badge-gray">₺${charger.pricePerKwh ?? "-"}/kWh</span>
             </div>
             <div class="charger-actions">
-              ${charger.status === "AVAILABLE"
-                ? `<a href="/ui/reservations/create?chargerId=${charger.id}" class="btn btn-primary btn-sm">${escapeHtml(label("reserve", "Reserve"))}</a>`
+              ${(charger.status === "AVAILABLE" || charger.status === "OCCUPIED")
+                ? `<a href="${buildReservationUrl(charger.id)}" class="btn btn-primary btn-sm">${escapeHtml(label("reserve", "Reserve"))}</a>`
                 : `<span class="text-muted" style="font-size:0.78rem;">${escapeHtml(label("chargerUnavailable", "This charger is not available right now."))}</span>`}
             </div>
           </div>
@@ -388,7 +388,10 @@
           : null;
         state.routeSummary = leg ? {
           distanceText: leg.distance ? leg.distance.text : "",
-          durationText: leg.duration ? leg.duration.text : ""
+          durationText: leg.duration ? leg.duration.text : "",
+          durationMinutes: leg.duration && Number.isFinite(leg.duration.value)
+            ? Math.ceil(leg.duration.value / 60)
+            : null
         } : null;
         renderDetailPanel(station, chargers || state.chargersByStationId.get(station.id) || station.chargers || []);
       } else {
@@ -532,6 +535,15 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  function buildReservationUrl(chargerId) {
+    const params = new URLSearchParams();
+    params.set("chargerId", String(chargerId));
+    if (state.routeSummary && Number.isFinite(state.routeSummary.durationMinutes)) {
+      params.set("travelDurationMinutes", String(state.routeSummary.durationMinutes));
+    }
+    return `/ui/reservations/create?${params.toString()}`;
   }
 
   dom.discoveryForm.addEventListener("submit", async (event) => {
