@@ -1,12 +1,17 @@
 package com.example.evsystem.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class RootController {
 
-    private static final String MINTLIFY_DOCS_URL = "https://egeuniversity.mintlify.app/";
+    private final String docsUrl;
+
+    public RootController(@Value("${app.docs.url:/swagger-ui/index.html}") String docsUrl) {
+        this.docsUrl = docsUrl;
+    }
 
     @GetMapping("/")
     public String redirectToHome() {
@@ -15,6 +20,6 @@ public class RootController {
 
     @GetMapping("/docs")
     public String redirectToDocs() {
-        return "redirect:" + MINTLIFY_DOCS_URL;
+        return "redirect:" + docsUrl;
     }
 }

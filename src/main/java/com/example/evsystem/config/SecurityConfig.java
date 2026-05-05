@@ -21,10 +21,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/docs", "/error", "/favicon.ico", "/ui/home", "/ui/login", "/ui/register", "/css/**", "/js/**", "/actuator/health").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/stations/**", "/chargers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/stations/**", "/chargers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/stations/**", "/chargers/**", "/reservations/**").hasRole("ADMIN")
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").hasRole("ADMIN")
                         .requestMatchers("/ui/**", "/vehicles/**", "/stations/**", "/reservations/**", "/sessions/**", "/chargers/**").authenticated()
                         .anyRequest().authenticated()
                 )

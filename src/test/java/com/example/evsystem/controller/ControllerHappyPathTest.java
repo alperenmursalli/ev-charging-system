@@ -163,10 +163,10 @@ class ControllerHappyPathTest {
 
     @Test
     void docsRedirectsToMintlifyDocumentation() throws Exception {
-        buildMockMvc(new RootController())
+        buildMockMvc(new RootController("https://egeuniversity.mintlify.app/"))
                 .perform(get("/docs"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("https://chargego.mintlify.app"));
+                .andExpect(redirectedUrl("https://egeuniversity.mintlify.app/"));
     }
 
     private MockMvc buildMockMvc(Object controller) {

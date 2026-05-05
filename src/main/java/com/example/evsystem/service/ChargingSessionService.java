@@ -104,7 +104,7 @@ public class ChargingSessionService {
         return completeSession(session, endBatteryLevel, calculateConsumedKwh(session, endBatteryLevel), LocalDateTime.now());
     }
 
-    @Scheduled(fixedDelayString = "${charging.session.auto-start-delay-ms:30000}")
+    @Scheduled(fixedRateString = "${charging.session.auto-start-delay-ms:30000}")
     public void autoStartDueReservations() {
         LocalDateTime now = LocalDateTime.now();
         List<Reservation> dueReservations = reservationRepository
