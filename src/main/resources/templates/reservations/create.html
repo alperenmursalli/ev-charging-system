@@ -239,7 +239,7 @@
  </div>
 
  <div class="form-body">
- <form th:action="@{/ui/reservations/create}" method="post" id="resForm">
+ <form th:action="@{/ui/reservations/create}" method="post" id="resForm" th:attr="data-confirm-msg=#{confirm.createReservation}">
  <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
  <input type="hidden" name="startTime" id="startTimeHidden"/>
  <input type="hidden" name="endTime" id="endTimeHidden"/>
@@ -257,15 +257,15 @@
  </select>
  </div>
 
- <!-- Charger seçimi -->
+ <!-- Şarj ünitesi seçimi -->
  <div>
- <div class="sec-title">Charger</div>
+ <div class="sec-title" th:text="#{reservations.charger}">Charging Unit</div>
  <select name="chargerId" class="fancy-select" required>
  <option value="" th:text="#{reservations.create.selectCharger}">Select charger...</option>
  <option th:each="c : ${chargers}"
  th:value="${c.id}"
  th:selected="${c.id == selectedChargerId}"
- th:text="${c.chargerCode != null ? c.chargerCode : 'Charger #' + c.id} + ' · ' + ${c.connectorType} + ' · ' + ${c.powerOutput} + ' · ₺' + ${c.pricePerKwh} + '/kWh · ' + ${c.status}"></option>
+ th:text="${c.chargerCode != null ? c.chargerCode : 'Unit #' + c.id} + ' · ' + ${c.connectorType} + ' · ' + ${c.powerOutput} + ' · ₺' + ${c.pricePerKwh} + '/kWh · ' + ${c.status}"></option>
  </select>
  <div class="select-hint">
  <span style="color:#22c55e;"></span> <span th:text="#{reservations.create.availableOnly}">Only AVAILABLE chargers can be reserved</span>

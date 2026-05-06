@@ -33,6 +33,10 @@
 
 <th:block th:fragment="uiScripts">
  <script th:inline="javascript">
+  const uiI18n = {
+    processing: [[#{common.processing}]]
+  };
+
   (function () {
     var d = localStorage.getItem("evDark");
     if (d === "1") {
@@ -58,6 +62,30 @@
     if (btn) {
       document.getElementById("darkLabel").textContent = on ? [[#{theme.light}]] : [[#{theme.dark}]];
     }
+
+    document.querySelectorAll("form[data-confirm-msg]").forEach(function (form) {
+      if (form.dataset.confirmBound === "1") return;
+      form.dataset.confirmBound = "1";
+      form.addEventListener("submit", function (e) {
+        if (form.dataset.submitting === "1") {
+          e.preventDefault();
+          return;
+        }
+        var msg = form.getAttribute("data-confirm-msg");
+        if (msg && !confirm(msg)) {
+          e.preventDefault();
+          return;
+        }
+        form.dataset.submitting = "1";
+        form.querySelectorAll("button[type='submit']").forEach(function (btnEl) {
+          btnEl.disabled = true;
+          if (!btnEl.dataset.originalText) {
+            btnEl.dataset.originalText = btnEl.textContent;
+          }
+          btnEl.textContent = uiI18n.processing;
+        });
+      });
+    });
   });
  </script>
 </th:block>

@@ -37,7 +37,7 @@
  <p th:text="${#temporals.format(chargingSession.startedAt, 'HH:mm:ss')}"></p>
  </div>
  <div>
- <p class="text-muted" style="font-size:0.78rem;">CHARGER</p>
+ <p class="text-muted" style="font-size:0.78rem;" th:text="#{reservations.charger.upper}">CHARGING UNIT</p>
  <p>#<span th:text="${chargingSession.chargerId}"></span></p>
  </div>
  </div>
@@ -53,7 +53,7 @@
 
  <!-- Bitiş formu -->
  <div class="card">
- <form th:action="@{/ui/sessions/{id}/end(id=${chargingSession.id})}" method="post">
+ <form th:action="@{/ui/sessions/{id}/end(id=${chargingSession.id})}" method="post" th:attr="data-confirm-msg=#{confirm.finishCharging}">
  <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
  <div class="form-group">
  <label class="form-label" th:text="#{sessions.end.batteryLevel}">End Battery Level (%) *</label>

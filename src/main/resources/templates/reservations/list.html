@@ -38,7 +38,7 @@
  <tr th:each="r : ${reservations}">
  <td th:text="${r.id}"></td>
  <td><span th:text="#{reservations.vehicleShort}">Vehicle</span> #<span th:text="${r.vehicleId}"></span></td>
- <td>Charger #<span th:text="${r.chargerId}"></span></td>
+ <td><span th:text="#{reservations.charger}">Charging Unit</span> #<span th:text="${r.chargerId}"></span></td>
  <td th:text="${#temporals.format(r.startTime, 'dd.MM HH:mm')}"></td>
  <td th:text="${#temporals.format(r.endTime, 'dd.MM HH:mm')}"></td>
  <td>
