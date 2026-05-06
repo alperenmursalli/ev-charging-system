@@ -19,7 +19,7 @@
  <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
 
  <div class="card">
- <form th:action="@{/ui/sessions/start}" method="post">
+ <form th:action="@{/ui/sessions/start}" method="post" th:attr="data-confirm-msg=#{confirm.startCharging}">
  <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
  <div class="form-group">
