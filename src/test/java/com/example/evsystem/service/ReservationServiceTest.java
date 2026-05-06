@@ -203,9 +203,14 @@ class ReservationServiceTest {
 
         LocalDateTime start = LocalDateTime.now().plusMinutes(10);
         LocalDateTime end = start.plusHours(1);
+        Reservation activeReservation = new Reservation();
+        activeReservation.setEndTime(LocalDateTime.now().plusMinutes(30));
 
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
         when(chargerRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(charger));
+        when(reservationRepository.findFirstByChargerIdAndStatusInAndEndTimeAfterOrderByEndTimeAsc(
+                eq(charger.getId()), anyList(), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(activeReservation));
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> reservationService.create(buildRequest(1L, 1L, start, end)));
